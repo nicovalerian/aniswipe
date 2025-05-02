@@ -62,6 +62,22 @@ def create_user():
         db.session.rollback()
         return jsonify({"error": f"Database error: {str(e)}"}), 500
 
+@app.route('/api/dev/reset_users', methods=['POST'])
+def reset_users_dev_only():
+    # WARNING: Development only! Do not expose in production!
+    if app.config['DEBUG']: # Only allow in debug mode
+        try:
+            num_deleted = db.session.query(User).delete()
+            db.session.commit()
+            # You might want to delete related UserAnimeEntry too, or rely on cascade delete if set up
+            # num_entries_deleted = db.session.query(UserAnimeEntry).delete()
+            # db.session.commit()
+            return jsonify({"message": f"Deleted {num_deleted} users."}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": str(e)}), 500
+    else:
+        return jsonify({"error": "Endpoint only available in debug mode"}), 403
 
 # --- Run the App (for local development) ---
 if __name__ == '__main__':
