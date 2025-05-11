@@ -27,10 +27,8 @@ function UserAnimeList({ userId }) {
             setIsLoading(true);
             setError(null);
             try {
-                console.log(`Fetching list for user ID: ${userId}`);
                 const response = await axios.get(`${API_URL}/users/${userId}/list`);
                 setAnimeList(response.data);
-                console.log("User list fetched successfully:", response.data);
             } catch (err) {
                 console.error("Error fetching user anime list:", err);
                 let errorMessage = "Failed to fetch user's anime list.";
@@ -67,19 +65,17 @@ function UserAnimeList({ userId }) {
         <Box mt={8} width="100%">
             <Heading size="lg" mb={6}>My Anime List</Heading>
             <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={6}>
-                {animeList.map((item) => {
-                    console.log(`Rendering item: ${item.title}, Status: `, item.status, typeof item.status);
-                    return (
+                {animeList.map((item) => (
                     <Box
                         key={item.entry_id}
                         borderWidth="1px"
                         borderRadius="lg"
                         overflow="hidden"
                         p={4}
+                        display="flex"
+                        flexDirection="column"
+                        justifyContent="space-between"
                     >
-                        <Text fontWeight="bold" fontSize="md" noOfLines={2} mb={1} textAlign="center">
-                             {item.title}
-                        </Text>
                         <Image
                             src={item.image_url || 'https://via.placeholder.com/150x225?text=No+Image'}
                             alt={`${item.title} poster`}
@@ -92,17 +88,25 @@ function UserAnimeList({ userId }) {
                             onError={(e) => { e.target.src = 'https://via.placeholder.com/150x225?text=Img+Error'; }}
                         />
                         <Box textAlign="center">
-                            <Tag.Root size="sm" colorPalette="blue" variant="subtle">
-                                <Tag.Label>{item.status}</Tag.Label>
-                            </Tag.Root>
-                            {item.score !== null && (
-                                <Badge ml={2} colorScheme="purple">
-                                    Score: {item.score}/10
-                                </Badge>
-                            )}
+                        <Text fontWeight="bold" fontSize="md" noOfLines={2} mb={1}>
+                            {item.title}
+                        </Text>
+                        <Tag.Root size="sm" colorPalette="blue" variant="subtle" display="block" mb={1}> {/* display="block" if needed */}
+                            <Tag.Label>{item.status}</Tag.Label>
+                        </Tag.Root>
+                        {item.score !== null && (
+                            <Badge size="sm" colorPalette="purple" variant="subtle" display="block"> {/* display="block" if needed */}
+                                Score: {item.score}/10
+                            </Badge>
+                        )}
+                        {item.score === null && (
+                            <Badge size="sm" colorPalette="gray" variant="subtle" display="block">
+                                Score: N/A
+                            </Badge>
+                        )}
                         </Box>
                     </Box>
-                )})}
+                ))}
             </SimpleGrid>
         </Box>
     );

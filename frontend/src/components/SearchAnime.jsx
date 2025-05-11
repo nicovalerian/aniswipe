@@ -83,7 +83,7 @@ function SearchAnime() {
             title: animeToAdd.title,
             // image_url: animeToAdd.image_url, // You can send this if you plan to store it in your Anime table
             status: "Plan to Watch", // Default status when adding from search
-            score: null // Default score
+            score: null
         };
 
         try {
