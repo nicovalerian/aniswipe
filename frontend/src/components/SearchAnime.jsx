@@ -9,6 +9,7 @@ import {
     Spinner,
     Heading,
 } from '@chakra-ui/react';
+// import { toaster } from "@/compo nents/ui/toaster"
 import axios from 'axios';
 import { useUser } from '../context/UserContext'; // Import useUser to get currentUser
 
@@ -29,12 +30,6 @@ function SearchAnime() {
             setHasSearched(false);
             return;
         }
-        // Optional: Add minimum query length check if desired
-        // if (query.trim().length < 3) {
-        //     setError("Search query must be at least 3 characters long.");
-        //     toast({ title: "Invalid Search", description: "Query too short.", status: "warning", duration: 3000, isClosable: true });
-        //     setHasSearched(true); setResults([]); setIsLoading(false); return;
-        // }
 
         setIsLoading(true);
         setError(null);
