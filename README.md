@@ -27,7 +27,6 @@ Swipe right on your next favorite anime! AniSwipe is a web application providing
     *   React (Vite)
     *   React Router (Routing)
     *   Axios (API Calls)
-    *   Zustand (State Management)
     *   Chakra UI (UI Components)
 *   **Backend:**
     *   Python 3
