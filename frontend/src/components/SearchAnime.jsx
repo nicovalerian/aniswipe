@@ -66,12 +66,13 @@ function SearchAnime({ onAnimeAdded }) {
         const payload = {
             mal_id: animeToAdd.mal_id,
             title: animeToAdd.title,
+            image_url: animeToAdd.image_url,
             status: "Plan to Watch",
             score: null
         };
         try {
             await axios.post(`${API_URL}/users/${currentUser.id}/list`, payload);
-            if (onAnimeAdded) { // Call the refresh trigger
+            if (onAnimeAdded) {
                 onAnimeAdded();
             }
         } catch (err) {

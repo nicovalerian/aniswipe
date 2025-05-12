@@ -1,8 +1,8 @@
-"""Initial database schema with User, Anime, UserAnimeEntry
+"""Add image_url to Anime table
 
-Revision ID: ae994699ac0a
+Revision ID: 8377329547f6
 Revises: 
-Create Date: 2025-05-02 17:14:53.463254
+Create Date: 2025-05-12 16:09:26.483700
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'ae994699ac0a'
+revision = '8377329547f6'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -22,6 +22,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('mal_id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=250), nullable=False),
+    sa.Column('image_url', sa.String(length=500), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('mal_id')
     )
