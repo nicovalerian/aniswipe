@@ -175,6 +175,56 @@ def get_user_anime_list(user_id):
     except Exception as e:
         print(f"Error fetching user list for user_id {user_id}: {e}")
         return jsonify({"error": "Failed to fetch user anime list"}), 500
+    
+@app.route('/api/users/<int:user_id>/list/<int:entry_id>', methods=['DELETE'])
+def remove_anime_from_list(user_id, entry_id):
+    try:
+        entry = UserAnimeEntry.query.filter_by(id=entry_id, user_id=user_id).first()
+        if not entry:
+            return jsonify({"error": "Entry not found"}), 404
+        
+        db.session.delete(entry)
+        db.session.commit()
+        return jsonify({"message": "Anime removed from list"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/users/<int:user_id>/list/<int:entry_id>', methods=['PATCH'])
+def update_anime_score(user_id, entry_id):
+    data = request.get_json()   
+    print(data)
+    if not data or 'score' not in data:
+        return jsonify({"error": "Score is required"}), 400
+    
+    try:
+        if data['score'] is None:
+            score = 0
+        else:
+            score = int(data['score'])
+        if not (0 <= score <= 10):
+            return jsonify({"error": "Score must be between 0 and 10"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "Score must be an integer"}), 400
+
+    
+    try:
+        entry = UserAnimeEntry.query.filter_by(id=entry_id, user_id=user_id).first()
+        if not entry:
+            return jsonify({"error": "Entry not found"}), 404
+        
+        entry.score = score
+        db.session.commit()
+        return jsonify({
+            "message": "Score updated",
+            "entry": {
+                "entry_id": entry.id,
+                "score": entry.score
+            }
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context(): db.create_all()
