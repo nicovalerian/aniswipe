@@ -1,3 +1,5 @@
+// frontend/src/components/SearchAnime.jsx
+
 import React, { useState } from 'react';
 import {
     Box,
@@ -9,18 +11,18 @@ import {
     Spinner,
     Heading,
 } from '@chakra-ui/react';
-// import { toaster } from "@/compo nents/ui/toaster"
 import axios from 'axios';
-import { useUser } from '../context/UserContext'; // Import useUser to get currentUser
+import { useUser } from '../context/UserContext';
 
 const API_URL = 'http://localhost:5000/api';
 
-function SearchAnime() {
-    const { currentUser } = useUser(); // Get the current user from context
+// Accept onAnimeAdded prop
+function SearchAnime({ onAnimeAdded }) {
+    const { currentUser } = useUser();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingAdd, setIsLoadingAdd] = useState(null); // To track loading state for individual add buttons
+    const [isLoadingAdd, setIsLoadingAdd] = useState(null);
     const [error, setError] = useState(null);
     const [hasSearched, setHasSearched] = useState(false);
 
@@ -30,27 +32,19 @@ function SearchAnime() {
             setHasSearched(false);
             return;
         }
-
         setIsLoading(true);
         setError(null);
         setResults([]);
         setHasSearched(true);
-
         try {
-            console.log(`Searching backend for: ${query}`);
             const response = await axios.get(`${API_URL}/anime/search`, {
                 params: { query: query }
             });
             setResults(response.data);
-            console.log("Backend search successful, data:", response.data);
         } catch (err) {
-            console.error("Backend search error:", err);
             let errorMessage = "Failed to fetch anime data from backend.";
-            if (err.response && err.response.data && err.response.data.error) {
-                errorMessage = err.response.data.error;
-            } else if (err.message) {
-                errorMessage = err.message;
-            }
+            if (err.response?.data?.error) errorMessage = err.response.data.error;
+            else if (err.message) errorMessage = err.message;
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -63,43 +57,27 @@ function SearchAnime() {
     };
 
     const handleKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            handleSearch();
-        }
+        if (event.key === 'Enter') handleSearch();
     };
 
     const handleAddAnime = async (animeToAdd) => {
-        if (!currentUser) {
-            return;
-        }
-        if (!animeToAdd || !animeToAdd.mal_id) {
-            return;
-        }
-
-        setIsLoadingAdd(animeToAdd.mal_id); // Set loading for this specific button
-
+        if (!currentUser || !animeToAdd?.mal_id) return;
+        setIsLoadingAdd(animeToAdd.mal_id);
         const payload = {
             mal_id: animeToAdd.mal_id,
             title: animeToAdd.title,
-            // image_url: animeToAdd.image_url, // You can send this if you plan to store it in your Anime table
-            status: "Plan to Watch", // Default status when adding from search
+            status: "Plan to Watch",
             score: null
         };
-
         try {
-            console.log(`Adding anime to user ${currentUser.id}'s list:`, payload);
-            const response = await axios.post(`${API_URL}/users/${currentUser.id}/list`, payload);
-            
-            console.log("Add anime response:", response.data);
-            // Optionally, you might want to disable the "Add" button for this anime
-            // or visually indicate it's been added.
-            // Or refresh a displayed user list if you implement that.
-
+            await axios.post(`${API_URL}/users/${currentUser.id}/list`, payload);
+            if (onAnimeAdded) { // Call the refresh trigger
+                onAnimeAdded();
+            }
         } catch (err) {
             console.error("Error adding anime:", err);
-
         } finally {
-            setIsLoadingAdd(null); // Reset loading for the button
+            setIsLoadingAdd(null);
         }
     };
 
@@ -119,26 +97,15 @@ function SearchAnime() {
                     onClick={handleSearch}
                     isLoading={isLoading}
                     disabled={isLoading}
-                    colorPalette="blue"
+                    colorPalette="blue" // Using colorPalette
                 >
                     Search
                 </Button>
             </Box>
 
-            {isLoading && (
-                <Box display="flex" justifyContent="center" my={4}>
-                    <Spinner size="xl" />
-                </Box>
-            )}
-
-            {error && !isLoading && (
-                <Text color="red.500" my={4}>Error: {error}</Text>
-            )}
-
-            {!isLoading && !error && hasSearched && query && results.length === 0 && (
-                 <Text>No results found for "{query}".</Text>
-             )}
-
+            {isLoading && (<Box display="flex" justifyContent="center" my={4}><Spinner size="xl" /></Box>)}
+            {error && !isLoading && (<Text color="red.500" my={4}>Error: {error}</Text>)}
+            {!isLoading && !error && hasSearched && query && results.length === 0 && (<Text>No results found for "{query}".</Text>)}
             {!isLoading && results.length > 0 && (
                 <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
                     {results.map((anime) => (
@@ -166,10 +133,10 @@ function SearchAnime() {
                             <Button
                                 size="xs"
                                 mt={2}
-                                colorPalette="blue"
+                                colorPalette="blue" // Using colorPalette
                                 onClick={() => handleAddAnime(anime)}
-                                isLoading={isLoadingAdd === anime.mal_id} // Show spinner on this specific button
-                                disabled={isLoadingAdd === anime.mal_id} // Disable this specific button
+                                isLoading={isLoadingAdd === anime.mal_id}
+                                disabled={isLoadingAdd === anime.mal_id}
                             >
                                 Add
                             </Button>
