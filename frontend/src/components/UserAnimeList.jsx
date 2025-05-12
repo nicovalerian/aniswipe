@@ -7,7 +7,8 @@ import {
     Image,
     Spinner,
     Tag,
-    Badge
+    Badge,
+    HStack // <--- Import HStack
 } from '@chakra-ui/react';
 import axios from 'axios';
 
@@ -19,6 +20,7 @@ function UserAnimeList({ userId }) {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        // ... (your useEffect logic is fine)
         if (!userId) {
             setAnimeList([]);
             return;
@@ -46,20 +48,10 @@ function UserAnimeList({ userId }) {
         fetchUserList();
     }, [userId]);
 
-    if (isLoading) {
-        return (
-            <Box display="flex" justifyContent="center" my={8}>
-                <Spinner size="xl" />
-                <Text ml={3}>Loading your list...</Text>
-            </Box>
-        );
-    }
-    if (error) {
-        return (<Box my={4}><Text color="red.500">Error loading list: {error}</Text></Box>);
-    }
-    if (animeList.length === 0 && !isLoading) {
-        return (<Box my={4}><Text>Your anime list is currently empty. Add some anime via the search!</Text></Box>);
-    }
+
+    if (isLoading) { /* ... your loading JSX ... */ }
+    if (error) { /* ... your error JSX ... */ }
+    if (animeList.length === 0 && !isLoading) { /* ... your empty list JSX ... */ }
 
     return (
         <Box mt={8} width="100%">
@@ -74,36 +66,43 @@ function UserAnimeList({ userId }) {
                         p={4}
                         display="flex"
                         flexDirection="column"
-                        justifyContent="space-between"
+                        // justifyContent="space-between" // Keep this if you want title+image pushed up and status/score pushed down
                     >
+                        {/* Image section remains the same */}
                         <Image
                             src={item.image_url || 'https://via.placeholder.com/150x225?text=No+Image'}
                             alt={`${item.title} poster`}
                             borderRadius="md"
-                            mb={3}
+                            mb={3} // Margin below image
                             htmlHeight="225px"
                             htmlWidth="150px"
                             objectFit="cover"
                             mx="auto"
                             onError={(e) => { e.target.src = 'https://via.placeholder.com/150x225?text=Img+Error'; }}
                         />
-                        <Box textAlign="center">
-                        <Text fontWeight="bold" fontSize="md" noOfLines={2} mb={1}>
-                            {item.title}
-                        </Text>
-                        <Tag.Root size="sm" colorPalette="blue" variant="subtle" display="block" mb={1}> {/* display="block" if needed */}
-                            <Tag.Label>{item.status}</Tag.Label>
-                        </Tag.Root>
-                        {item.score !== null && (
-                            <Badge size="sm" colorPalette="purple" variant="subtle" display="block"> {/* display="block" if needed */}
-                                Score: {item.score}/10
-                            </Badge>
-                        )}
-                        {item.score === null && (
-                            <Badge size="sm" colorPalette="gray" variant="subtle" display="block">
-                                Score: N/A
-                            </Badge>
-                        )}
+                        {/* Text content section */}
+                        <Box textAlign="center" mt="auto"> {/* mt="auto" will push this Box to the bottom if parent is flex */}
+                            <Text fontWeight="bold" fontSize="md" noOfLines={2} mb={1}>
+                                {item.title}
+                            </Text>
+                            {/* HStack for status and score to be on the same line and centered */}
+                            <HStack spacing={2} justifyContent="center" mt={1}>
+                                <Tag.Root size="sm" colorPalette="blue" variant="subtle">
+                                    <Tag.Label>{item.status}</Tag.Label>
+                                </Tag.Root>
+                                
+                                {item.score !== null && (
+                                    <Badge size="sm" colorPalette="purple" variant="subtle">
+                                        Score: {item.score}/10
+                                    </Badge>
+                                )}
+                                {item.score === null && (
+                                    <Badge size="sm" colorPalette="gray" variant="subtle"> {/* Changed to gray for N/A */}
+                                        Score: N/A
+                                    </Badge>
+                                )}
+                            </HStack>
+                            {/* TODO: Add Edit/Delete buttons here later, perhaps in another HStack or VStack */}
                         </Box>
                     </Box>
                 ))}
