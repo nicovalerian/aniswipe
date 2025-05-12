@@ -119,7 +119,7 @@ function SearchAnime() {
                     onClick={handleSearch}
                     isLoading={isLoading}
                     disabled={isLoading}
-                    colorScheme="teal"
+                    colorPalette="blue"
                 >
                     Search
                 </Button>
@@ -166,7 +166,7 @@ function SearchAnime() {
                             <Button
                                 size="xs"
                                 mt={2}
-                                colorScheme="green"
+                                colorPalette="blue"
                                 onClick={() => handleAddAnime(anime)}
                                 isLoading={isLoadingAdd === anime.mal_id} // Show spinner on this specific button
                                 disabled={isLoadingAdd === anime.mal_id} // Disable this specific button
