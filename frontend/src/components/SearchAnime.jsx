@@ -11,6 +11,7 @@ import {
     Spinner,
     Heading,
 } from '@chakra-ui/react';
+import { toaster } from "@/components/ui/toaster";
 import axios from 'axios';
 import { useUser } from '../context/UserContext';
 
@@ -72,11 +73,26 @@ function SearchAnime({ onAnimeAdded }) {
         };
         try {
             await axios.post(`${API_URL}/users/${currentUser.id}/list`, payload);
+            
+            // Success toast
+            toaster.create({
+                title: "Added to list",
+                description: `${animeToAdd.title} was added successfully`,
+                type: "success",
+            });
+    
             if (onAnimeAdded) {
                 onAnimeAdded();
             }
         } catch (err) {
             console.error("Error adding anime:", err);
+            
+            // Error toast
+            toaster.create({
+                title: "Error adding anime",
+                description: err.response?.data?.error || "Failed to add anime to your list",
+                type: "error",
+            });
         } finally {
             setIsLoadingAdd(null);
         }
