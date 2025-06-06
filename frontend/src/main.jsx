@@ -6,7 +6,7 @@ import App from './App.jsx';
 import './index.css';
 
 // 1. Your custom Provider (for Chakra and possibly other UI elements)
-import { Provider as CustomUiProvider } from "@/components/ui/provider"; // Renamed for clarity
+import { Provider as CustomUiProvider } from "./components/ui/provider"; // Renamed for clarity
 
 // 2. Your UserProvider for user state management
 import { UserProvider } from './context/UserContext.jsx';

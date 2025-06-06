@@ -13,20 +13,32 @@ import {
     HStack,
     Spinner,
     Portal,
-    createListCollection
-    // Removed FormControl and FormLabel imports
-} from '@chakra-ui/react'; // Or your UI kit's specific import paths
+createListCollection
+} from '@chakra-ui/react';
+import { Field } from '@ark-ui/react';
+import { useNavigate } from 'react-router-dom';
 
 function UserSelector() {
-    const { users, currentUser, loading, error, selectUser, createUser } = useUser();
+    const { users, currentUser, loading, error, createUser, loginUser } = useUser();
     const [newUserEmail, setNewUserEmail] = useState('');
+    const [selectedUserId, setSelectedUserId] = useState([]);
+    const navigate = useNavigate();
 
     const handleCreateUser = async (event) => {
         event.preventDefault();
         if (!newUserEmail.trim()) return;
-        const created = await createUser(newUserEmail);
-        if (created) {
+        const createdUser = await createUser(newUserEmail);
+        if (createdUser) {
             setNewUserEmail('');
+            navigate('/');
+        }
+    };
+
+    const handleLoginUser = async () => {
+        if (selectedUserId.length === 0) return;
+        const loggedInUser = await loginUser(selectedUserId[0]);
+        if (loggedInUser) {
+            navigate('/');
         }
     };
 
@@ -38,47 +50,40 @@ function UserSelector() {
     });
 
     return (
-        <Box p={4} borderWidth="1px" borderRadius="lg" shadow="md" width="100%" maxWidth="500px" mx="auto">
-            <Heading size="md" mb={6} textAlign="center">Select or Create User</Heading>
+        <Box p={6} borderWidth="1px" borderRadius="lg" shadow="xl" width="100%" maxWidth="500px" mx="auto" my={8} bg="gray.800" color="white">
+            <Heading size="lg" mb={8} textAlign="center">Welcome to AniSwipe!</Heading>
             
             {loading && !userSelectItems.items.length && (
-                <Box display="flex" alignItems="center" justifyContent="center" minH="100px">
-                    <Spinner thickness="4px" speed="0.65s" colorPalette="blue" size="xl"/>
-                    <Text ml={3}>Loading users...</Text>
-                </Box>
+                <VStack spacing={4} alignItems="center" justifyContent="center" minH="100px">
+                    <Spinner thickness="4px" speed="0.65s" emptyColor="gray.700" color="white" size="xl"/>
+                    <Text fontSize="lg" color="gray.400">Loading users...</Text>
+                </VStack>
             )}
 
-            {error && (<Text color="red.500" mb={4} textAlign="center">Error: {error}</Text>)}
+            {error && (<Text color="red.300" mb={4} textAlign="center" fontSize="md">Error: {error}</Text>)}
 
             {(!loading || users.length > 0 || error) && (
-                <VStack spacing={5} align="stretch">
-                    <Box> {/* Optional: A Box to group the label and select if needed for layout */}
+                <VStack spacing={6} align="stretch">
+                    <Field.Root id="select-user">
+                        <Field.Label fontSize="md" fontWeight="bold">Select Existing User:</Field.Label>
                         <Select.Root
                             collection={userSelectItems}
-                            value={currentUser ? [currentUser.id.toString()] : []}
+                            value={selectedUserId}
                             onValueChange={(details) => {
-                                if (details.value && details.value.length > 0) {
-                                    selectUser(details.value[0]);
-                                } else {
-                                    selectUser(null);
-                                }
+                                setSelectedUserId(details.value || []);
                             }}
                             disabled={loading}
-                            size="md"
-                            // width="100%" // Apply width here or on a wrapping Box/FormControl
+                            size="lg"
                         >
-                            {/* CORRECTED: Select.Label INSIDE Select.Root */}
-                            <Select.Label mb={1} fontWeight="medium">Select Existing User:</Select.Label>
                             <Select.HiddenSelect />
                             <Select.Control>
                                 <Select.Trigger>
                                     <Select.ValueText placeholder="-- Select User --" />
                                 </Select.Trigger>
-                                {/* <Select.Indicator /> */}
                             </Select.Control>
                             <Portal>
                                 <Select.Positioner>
-                                    <Select.Content>
+                                    <Select.Content bg="gray.700">
                                         {userSelectItems.items.map((userItem) => (
                                             <Select.Item item={userItem} key={userItem.value}>
                                                 {userItem.label}
@@ -89,40 +94,52 @@ function UserSelector() {
                                 </Select.Positioner>
                             </Portal>
                         </Select.Root>
-                    </Box>
+                        <Button
+                           onClick={handleLoginUser}
+                           disabled={loading || selectedUserId.length === 0}
+                           isLoading={loading && !!selectedUserId}
+                           variant="solid"
+                           size="lg"
+                           mt={4}
+                           width="full"
+                        >
+                           Login Selected User
+                        </Button>
+                    </Field.Root>
+                    
+                    <Text fontSize="lg" fontWeight="bold" textAlign="center" mt={4}>OR</Text>
 
                     <form onSubmit={handleCreateUser}>
-                        <VStack spacing={2} align="stretch">
-                            <Text as="label" htmlFor="newUserEmailInput" fontWeight="medium">Create New User (Email):</Text>
+                        <Field.Root id="new-user-email">
+                            <Field.Label fontSize="md" fontWeight="bold">Create New User:</Field.Label>
                             <HStack>
                                 <Input
-                                    id="newUserEmailInput"
                                     type="email"
                                     value={newUserEmail}
                                     onChange={(e) => setNewUserEmail(e.target.value)}
-                                    placeholder="new.user@example.com"
+                                    placeholder="Enter new user email"
                                     required
                                     disabled={loading}
-                                    size="md"
+                                    size="lg"
                                 />
                                 <Button
                                     type="submit"
                                     disabled={loading || !newUserEmail.trim()}
                                     isLoading={loading && !!newUserEmail.trim()}
-                                    colorPalette="blue"
-                                    size="md"
+                                    variant="solid"
+                                    size="lg"
                                 >
-                                    Create User
+                                    Create Account
                                 </Button>
                             </HStack>
-                        </VStack>
+                        </Field.Root>
                     </form>
                 </VStack>
             )}
 
             {currentUser && (
-                <Text mt={6} fontWeight="bold" textAlign="center">
-                    Current User: {currentUser.email} (ID: {currentUser.id})
+                <Text mt={8} fontWeight="bold" textAlign="center" fontSize="lg" color="gray.400">
+                    Currently Logged In: {currentUser.email} (ID: {currentUser.id})
                 </Text>
             )}
         </Box>

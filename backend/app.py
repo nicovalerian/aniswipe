@@ -69,18 +69,20 @@ def hello(): return "Hello from AniSwipe Backend!"
 def get_users():
     try:
         users = User.query.all()
-        return jsonify([{'id': user.id, 'email': user.email} for user in users])
+        return jsonify([{'id': user.id, 'email': user.email, 'username': user.username} for user in users]) # Return username in response
     except Exception as e: print(f"Error in /api/users GET: {e}"); return jsonify({"error": "Failed to fetch users"}), 500
 
 @app.route('/api/users', methods=['POST'])
 def create_user():
     data = request.get_json()
     if not data or 'email' not in data: return jsonify({"error": "Email is required"}), 400
+    if not data or 'username' not in data: return jsonify({"error": "Username is required"}), 400 # Adding username check
     if User.query.filter_by(email=data['email']).first(): return jsonify({"error": "Email already exists"}), 409
-    new_user = User(email=data['email'])
+    if User.query.filter_by(username=data['username']).first(): return jsonify({"error": "Username already exists"}), 409 # Check for existing username
+    new_user = User(email=data['email'], username=data['username']) # Pass username to User constructor
     try:
         db.session.add(new_user); db.session.commit()
-        return jsonify({'id': new_user.id, 'email': new_user.email}), 201
+        return jsonify({'id': new_user.id, 'email': new_user.email, 'username': new_user.username}), 201 # Return username in response
     except Exception as e: db.session.rollback(); print(f"Error in /api/users POST: {e}"); return jsonify({"error": "Failed to create user"}), 500
 
 @app.route('/api/dev/reset_users', methods=['POST'])

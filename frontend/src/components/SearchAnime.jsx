@@ -1,11 +1,10 @@
-// frontend/src/components/SearchAnime.jsx
-
 import React, { useState } from 'react';
 import {
     Box,
     Input,
     Button,
-    SimpleGrid,
+    List,
+    Flex,
     Image,
     Text,
     Spinner,
@@ -17,7 +16,6 @@ import { useUser } from '../context/UserContext';
 
 const API_URL = 'http://localhost:5000/api';
 
-// Accept onAnimeAdded prop
 function SearchAnime({ onAnimeAdded }) {
     const { currentUser } = useUser();
     const [query, setQuery] = useState('');
@@ -74,7 +72,6 @@ function SearchAnime({ onAnimeAdded }) {
         try {
             await axios.post(`${API_URL}/users/${currentUser.id}/list`, payload);
             
-            // Success toast
             toaster.create({
                 title: "Added to list",
                 description: `${animeToAdd.title} was added successfully`,
@@ -87,7 +84,6 @@ function SearchAnime({ onAnimeAdded }) {
         } catch (err) {
             console.error("Error adding anime:", err);
             
-            // Error toast
             toaster.create({
                 title: "Error adding anime",
                 description: err.response?.data?.error || "Failed to add anime to your list",
@@ -114,7 +110,6 @@ function SearchAnime({ onAnimeAdded }) {
                     onClick={handleSearch}
                     isLoading={isLoading}
                     disabled={isLoading}
-                    colorPalette="blue" // Using colorPalette
                 >
                     Search
                 </Button>
@@ -124,42 +119,30 @@ function SearchAnime({ onAnimeAdded }) {
             {error && !isLoading && (<Text color="red.500" my={4}>Error: {error}</Text>)}
             {!isLoading && !error && hasSearched && query && results.length === 0 && (<Text>No results found for "{query}".</Text>)}
             {!isLoading && results.length > 0 && (
-                <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
+                <List spacing={3} mt={4}>
                     {results.map((anime) => (
-                        <Box
-                            key={anime.mal_id}
-                            borderWidth="1px"
-                            borderRadius="lg"
-                            overflow="hidden"
-                            p={3}
-                            textAlign="center"
-                             _hover={{ boxShadow: "md" }}
-                        >
+                    <List.Item key={anime.mal_id}>
+                        <Flex alignItems="center">
                             <Image
-                                src={anime.image_url || 'https://via.placeholder.com/150?text=No+Image'}
+                                src={anime.image_url || 'https://via.placeholder.com/50?text=No+Image'}
                                 alt={`${anime.title} poster`}
-                                boxSize="150px"
-                                objectFit="contain"
-                                mx="auto"
-                                mb={2}
-                                onError={(e) => { e.target.src = 'https://via.placeholder.com/150?text=Image+Error'; }}
+                                boxSize="50px"
+                                objectFit="cover"
+                                mr={3}
                             />
-                            <Text fontSize="sm" fontWeight="bold" noOfLines={2}>
-                                {anime.title}
-                            </Text>
+                            <Text flex="1" fontSize="md">{anime.title}</Text>
                             <Button
-                                size="xs"
-                                mt={2}
-                                colorPalette="blue" // Using colorPalette
+                                size="sm"
                                 onClick={() => handleAddAnime(anime)}
                                 isLoading={isLoadingAdd === anime.mal_id}
                                 disabled={isLoadingAdd === anime.mal_id}
                             >
                                 Add
                             </Button>
-                        </Box>
+                        </Flex>
+                    </List.Item>
                     ))}
-                </SimpleGrid>
+                </List>
             )}
         </Box>
     );

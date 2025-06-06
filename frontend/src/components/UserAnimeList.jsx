@@ -13,7 +13,7 @@ import {
     NumberInput,
 } from '@chakra-ui/react';
 import axios from 'axios';
-import { toaster } from "@/components/ui/toaster";
+import { toaster } from "./ui/toaster";
 
 const API_URL = 'http://localhost:5000/api';
 

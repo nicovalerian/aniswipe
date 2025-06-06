@@ -5,6 +5,7 @@ db = SQLAlchemy()
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=True) # Adding username field
     profile_pic_filename = db.Column(db.String(100), nullable=True)
     favorite_anime_id = db.Column(db.Integer, db.ForeignKey('anime.id'), nullable=True)
     anime_entries = db.relationship('UserAnimeEntry', backref='user', lazy=True, cascade="all, delete-orphan")
