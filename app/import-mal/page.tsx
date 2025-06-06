@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { fetchMalAnimeList, confirmImport } from "./actions";
 import { Input } from "@/components/ui/input";
@@ -125,9 +126,11 @@ export default function ImportMalPage() {
                     rel="noopener noreferrer"
                     className="block mb-2 overflow-hidden rounded-md flex-shrink-0"
                   >
-                    <img
+                    <Image
                       src={anime.entry.images.webp.image_url}
                       alt={anime.entry.title}
+                      width={225}
+                      height={320}
                       className="w-full h-auto object-cover transition-transform duration-200 hover:scale-105"
                     />
                   </a>
