@@ -1,6 +1,5 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
+
 import { useState } from "react";
 import { fetchMalAnimeList, confirmImport } from "./actions";
 import { Input } from "@/components/ui/input";
@@ -33,18 +32,7 @@ interface JikanAnimeEntry {
   status: string;
 }
 
-export default async function ImportMalPage() {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
-    redirect("/login");
-  }
-
-  return <ImportMalClientPage />;
-}
-
-function ImportMalClientPage() {
+export default function ImportMalPage() {
   const [username, setUsername] = useState("");
   const [animeList, setAnimeList] = useState<JikanAnimeEntry[]>([]);
   const [loading, setLoading] = useState(false);

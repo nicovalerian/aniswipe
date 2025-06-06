@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 
 interface SwipeCardProps {
   mal_id: number;
@@ -10,39 +10,46 @@ interface SwipeCardProps {
   genres: string[];
 }
 
-export function SwipeCard({ mal_id, title, image_url, synopsis, score, genres }: SwipeCardProps) {
-  const shortSynopsis = synopsis.length > 300 ? synopsis.substring(0, 297) + "..." : synopsis;
+export function SwipeCard({ title, image_url, synopsis, score, genres }: SwipeCardProps) {
+  const shortSynopsis = synopsis.length > 150 ? synopsis.substring(0, 147) + "..." : synopsis;
 
   return (
-    <Card className="w-[350px] flex-shrink-0 bg-card text-card-foreground shadow-lg">
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="text-2xl font-bold leading-tight line-clamp-2">{title}</CardTitle>
-        <div className="text-sm text-muted-foreground mt-1">MAL Score: <span className="font-semibold text-primary">{score || "N/A"}</span></div>
-      </CardHeader>
-      <CardContent className="p-4 pt-2">
-        <div className="relative w-full h-[250px] mb-4 rounded-md overflow-hidden">
-          <Image src={image_url} alt={title} fill style={{ objectFit: "cover" }} className="transition-transform duration-300 hover:scale-105" />
+    <Card className="relative w-[350px] h-[500px] flex-shrink-0 shadow-lg rounded-xl overflow-hidden text-white">
+      <Image
+        src={image_url}
+        alt={title}
+        fill
+        style={{ objectFit: "cover" }}
+        className="absolute inset-0 z-0"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" />
+      <div className="relative z-20 flex flex-col justify-end h-full p-6">
+        <div className="space-y-2">
+          <CardTitle className="text-3xl font-bold leading-tight line-clamp-2">{title}</CardTitle>
+          <div className="text-md">
+            MAL Score: <span className="font-semibold">{score || "N/A"}</span>
+          </div>
+          <div className="flex flex-wrap gap-2 py-2">
+            {genres.slice(0, 3).map((genre) => (
+              <span key={genre} className="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-medium">
+                {genre}
+              </span>
+            ))}
+          </div>
+          <p className="text-sm line-clamp-3">{shortSynopsis}</p>
         </div>
-        <p className="text-sm text-foreground mb-3 line-clamp-4">{shortSynopsis}</p>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {genres.map((genre) => (
-            <span key={genre} className="bg-secondary text-secondary-foreground text-xs px-3 py-1 rounded-full font-medium">
-              {genre}
-            </span>
-          ))}
-        </div>
-        <div className="mt-4 text-center text-xs text-muted-foreground space-y-1">
+        <div className="mt-4 text-center text-xs text-white/70 space-y-1">
           <p>
-            <span className="font-semibold text-primary">Swipe Right</span> to Add to Planned
+            <span className="font-semibold">Swipe Right</span> to Add to Planned
           </p>
           <p>
-            <span className="font-semibold text-destructive">Swipe Left</span> to Skip
+            <span className="font-semibold">Swipe Left</span> to Skip
           </p>
           <p>
-            <span className="font-semibold text-accent">Swipe Up</span> for More Options
+            <span className="font-semibold">Swipe Up</span> for More Options
           </p>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

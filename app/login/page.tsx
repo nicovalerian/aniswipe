@@ -1,31 +1,55 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { signIn, signUp } from "@/app/auth/actions";
-// import { useSearchParams } from "next/navigation"; // No longer needed
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
-  // const searchParams = useSearchParams(); // No longer needed
-  // const message = searchParams.get("message"); // No longer needed
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [registrationError, setRegistrationError] = useState<string | null>(null);
+  const [registrationError, setRegistrationError] = useState<string | null>(
+    null
+  );
+  const [activeTab, setActiveTab] = useState("login");
+  const router = useRouter();
 
   return (
     <div className="relative flex items-center justify-center min-h-screen overflow-hidden">
       <div className="login-background"></div>
-      <Tabs defaultValue="login" className="w-full max-w-lg z-10 form-background" onValueChange={() => {
-        setLoginError(null);
-        setRegistrationError(null);
-      }}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          setActiveTab(value);
+          setLoginError(null);
+          setRegistrationError(null);
+        }}
+        className="w-full max-w-lg z-10 form-background"
+      >
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-white text-slate-400">Login</TabsTrigger>
-          <TabsTrigger value="register" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-white text-slate-400">Register</TabsTrigger>
+          <TabsTrigger
+            value="login"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-white text-slate-400"
+          >
+            Login
+          </TabsTrigger>
+          <TabsTrigger
+            value="register"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-white text-slate-400"
+          >
+            Register
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="login">
           <Card className="border border-slate-700">
@@ -44,7 +68,7 @@ export default function LoginPage() {
                   if (!result.success) {
                     setLoginError(result.error || "An unknown error occurred.");
                   } else {
-                    window.location.href = "/swipe"; // Redirect on successful login
+                    router.push("/swipe"); // Redirect on successful login
                   }
                 }}
                 className="space-y-4"
@@ -72,7 +96,9 @@ export default function LoginPage() {
                     className="border-slate-700"
                   />
                 </div>
-                {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+                {loginError && (
+                  <p className="text-red-500 text-sm">{loginError}</p>
+                )}
                 <Button className="w-full" type="submit" variant="cta">
                   Login
                 </Button>
@@ -92,12 +118,19 @@ export default function LoginPage() {
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
+                  const form = e.currentTarget;
+                  const formData = new FormData(form);
                   const result = await signUp(formData);
                   if (!result.success) {
-                    setRegistrationError(result.error || "An unknown error occurred.");
+                    setRegistrationError(
+                      result.error || "An unknown error occurred."
+                    );
                   } else {
-                    window.location.href = "/login?message=Check your email for the confirmation link."; // Redirect on successful registration
+                    toast.success(
+                      "Registration successful! You can now sign in."
+                    );
+                    setActiveTab("login");
+                    form.reset();
                   }
                 }}
                 className="space-y-4"
@@ -136,7 +169,9 @@ export default function LoginPage() {
                     className="border-slate-700"
                   />
                 </div>
-                {registrationError && <p className="text-red-500 text-sm">{registrationError}</p>}
+                {registrationError && (
+                  <p className="text-red-500 text-sm">{registrationError}</p>
+                )}
                 <Button className="w-full" type="submit" variant="cta">
                   Register
                 </Button>

@@ -1,35 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { AnimeSearch } from "@/components/anime-search";
 import { UserAnimeList } from "@/components/user-anime-list";
 import { RecommendationSwiper } from "@/components/recommendation-swiper";
 
 export default function SwipePage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-      } else {
-        setLoading(false);
-      }
-    };
-    checkUser();
-  }, [router]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen py-2">

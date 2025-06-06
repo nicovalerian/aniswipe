@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 interface AnimeData {
   mal_id: number;
@@ -38,11 +38,12 @@ export async function searchAnime(query: string) {
 export async function addAnimeToList(data: AddAnimeEntryData) {
   const { mal_id, title, image_url, status, score } = data;
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
     throw new Error("User not authenticated.");
   }
-  const userId = userData.user.id;
+  const userId = user.id;
 
   // Check if anime exists in our Anime table, if not, add it
   const { data: animeExists, error: fetchAnimeError } = await supabase
@@ -72,7 +73,7 @@ export async function addAnimeToList(data: AddAnimeEntryData) {
   const { error: upsertEntryError } = await supabase
     .from("UserAnimeEntry")
     .upsert(
-      { user_id: userId, anime_id: animeId, status, score },
+      { user_id: userId, anime_id: animeId, status, user_score: score },
       { onConflict: "user_id,anime_id" }
     );
 
@@ -82,11 +83,12 @@ export async function addAnimeToList(data: AddAnimeEntryData) {
 }
 
 export async function getUserAnimeList() {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
     throw new Error("User not authenticated.");
   }
-  const userId = userData.user.id;
+  const userId = user.id;
 
   const { data: userAnimeEntries, error } = await supabase
     .from("UserAnimeEntry")
@@ -101,11 +103,12 @@ export async function getUserAnimeList() {
 }
 
 export async function getRecommendations() {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
     throw new Error("User not authenticated.");
   }
-  const userId = userData.user.id;
+  const userId = user.id;
 
   // 1. Fetch top/popular anime from Jikan API
   const res = await fetch("https://api.jikan.moe/v4/top/anime?limit=20"); // Fetch a reasonable limit
@@ -125,7 +128,7 @@ export async function getRecommendations() {
     throw userAnimeError;
   }
 
-  const userMalIds = new Set(userAnimeEntries.map((entry: { Anime: { mal_id: number } | null }) => entry.Anime?.mal_id));
+  const userMalIds = new Set(userAnimeEntries.map((entry: { Anime: Array<{ mal_id: number }> | null }) => entry.Anime?.[0]?.mal_id));
 
   // 3. Filter out anime that the user already has
   const filteredRecommendations = (topAnime as JikanAnime[]).filter((anime) => {
