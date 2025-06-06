@@ -1,0 +1,155 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: 220 20% 10%; /* Dark gray */
+  --foreground: 220 20% 90%; /* Light gray */
+  --card: 220 20% 15%; /* Slightly lighter dark gray for cards */
+  --card-foreground: 220 20% 90%;
+  --popover: 220 20% 15%;
+  --popover-foreground: 220 20% 90%;
+  --primary: 280 80% 60%; /* Vibrant purple */
+  --primary-foreground: 220 20% 98%;
+  --secondary: 260 50% 30%; /* Darker purple */
+  --secondary-foreground: 220 20% 90%;
+  --muted: 220 10% 20%; /* Muted gray */
+  --muted-foreground: 220 10% 60%;
+  --accent: 300 80% 50%; /* Magenta */
+  --accent-foreground: 220 20% 98%;
+  --destructive: 0 80% 60%; /* Red */
+  --border: 220 10% 25%;
+  --input: 220 10% 25%;
+  --ring: 280 80% 60%;
+  --chart-1: 280 80% 60%;
+  --chart-2: 300 80% 50%;
+  --chart-3: 260 50% 30%;
+  --chart-4: 240 60% 40%;
+  --chart-5: 200 60% 40%;
+  --sidebar: 220 20% 10%;
+  --sidebar-foreground: 220 20% 90%;
+  --sidebar-primary: 280 80% 60%;
+  --sidebar-primary-foreground: 220 20% 98%;
+  --sidebar-accent: 300 80% 50%;
+  --sidebar-accent-foreground: 220 20% 98%;
+  --sidebar-border: 220 10% 25%;
+  --sidebar-ring: 280 80% 60%;
+}
+
+.dark {
+  --background: 220 20% 10%;
+  --foreground: 220 20% 90%;
+  --card: 220 20% 15%;
+  --card-foreground: 220 20% 90%;
+  --popover: 220 20% 15%;
+  --popover-foreground: 220 20% 90%;
+  --primary: 280 80% 60%;
+  --primary-foreground: 220 20% 98%;
+  --secondary: 260 50% 30%;
+  --secondary-foreground: 220 20% 90%;
+  --muted: 220 10% 20%;
+  --muted-foreground: 220 10% 60%;
+  --accent: 300 80% 50%;
+  --accent-foreground: 220 20% 98%;
+  --destructive: 0 80% 60%;
+  --border: 220 10% 25%;
+  --input: 220 10% 25%;
+  --ring: 280 80% 60%;
+  --chart-1: 280 80% 60%;
+  --chart-2: 300 80% 50%;
+  --chart-3: 260 50% 30%;
+  --chart-4: 240 60% 40%;
+  --chart-5: 200 60% 40%;
+  --sidebar: 220 20% 10%;
+  --sidebar-foreground: 220 20% 90%;
+  --sidebar-primary: 280 80% 60%;
+  --sidebar-primary-foreground: 220 20% 98%;
+  --sidebar-accent: 300 80% 50%;
+  --sidebar-accent-foreground: 220 20% 98%;
+  --sidebar-border: 220 10% 25%;
+  --sidebar-ring: 280 80% 60%;
+}
+
+.login-background {
+  background-image: url('/login-background.jpg');
+  background-size: cover;
+  background-position: center;
+  filter: blur(5px) brightness(0.5); /* Blur and darken */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.form-background {
+  background-color: rgba(var(--card-rgb), 0.8); /* Semi-transparent background */
+  border-radius: var(--radius);
+  padding: 2rem;
+}
+
+@layer base {
+  input::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Custom button hover effect for enhanced interaction clarity */
+  .btn-hover-effect {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .btn-hover-effect:hover {
+    filter: brightness(1.2); /* Increase brightness on hover */
+    box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.7); /* Prominent outer glow with primary color */
+    transform: scale(1.05); /* Slight scale effect */
+  }
+}
