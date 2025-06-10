@@ -15,27 +15,24 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner"; // Assuming a Spinner component exists or will be created
 
-interface JikanAnimeEntry {
-  mal_id: number;
-  entry: {
-    mal_id: number;
-    url: string;
-    images: {
-      webp: {
-        image_url: string;
-        small_image_url: string;
-        large_image_url: string;
-      };
-    };
+interface MalAnimeEntry {
+  node: {
+    id: number;
     title: string;
+    main_picture: {
+      medium: string;
+      large: string;
+    };
   };
-  score: number;
-  status: string;
+  list_status: {
+    status: string;
+    score: number;
+  };
 }
 
 export default function ImportMalPage() {
   const [username, setUsername] = useState("");
-  const [animeList, setAnimeList] = useState<JikanAnimeEntry[]>([]);
+  const [animeList, setAnimeList] = useState<MalAnimeEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [importSuccess, setImportSuccess] = useState(false);
@@ -62,7 +59,7 @@ export default function ImportMalPage() {
     setError("");
 
     try {
-      await confirmImport(animeList);
+      await confirmImport(animeList, username);
       setImportSuccess(true);
       setAnimeList([]); // Clear list after successful import
     } catch (err: unknown) {
@@ -115,30 +112,30 @@ export default function ImportMalPage() {
           <h2 className="text-2xl font-semibold mb-4">Fetched Anime List</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {animeList.map((anime) => (
-              <Card key={anime.mal_id} className="flex flex-col">
+              <Card key={anime.node.id} className="flex flex-col">
                 <CardHeader className="flex-shrink-0">
-                  <CardTitle className="text-lg">{anime.entry.title}</CardTitle>
+                  <CardTitle className="text-lg">{anime.node.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col flex-grow">
                   <a
-                    href={anime.entry.url}
+                    href={`https://myanimelist.net/anime/${anime.node.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block mb-2 overflow-hidden rounded-md flex-shrink-0"
                   >
                     <Image
-                      src={anime.entry.images.webp.image_url}
-                      alt={anime.entry.title}
+                      src={anime.node.main_picture.large || anime.node.main_picture.medium}
+                      alt={anime.node.title}
                       width={225}
                       height={320}
                       className="w-full h-auto object-cover transition-transform duration-200 hover:scale-105"
                     />
                   </a>
                   <p className="text-sm">
-                    <strong className="font-semibold">Score:</strong> {anime.score || "N/A"}
+                    <strong className="font-semibold">Score:</strong> {anime.list_status.score || "N/A"}
                   </p>
                   <p className="text-sm">
-                    <strong className="font-semibold">Status:</strong> {anime.status}
+                    <strong className="font-semibold">Status:</strong> {anime.list_status.status}
                   </p>
                 </CardContent>
               </Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,7 +77,7 @@ export function AnimeSearch() {
               <CardTitle className="text-lg font-semibold mb-2 line-clamp-2 text-primary">
                 {anime.title}
               </CardTitle>
-              <AddAnimeDialog anime={anime} />
+              <AddAnimeDialog anime={anime} onAnimeAdded={() => console.log("Anime added from search!")} />
             </CardContent>
           </Card>
         ))}

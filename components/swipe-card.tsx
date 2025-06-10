@@ -14,7 +14,7 @@ export function SwipeCard({ title, image_url, synopsis, score, genres }: SwipeCa
   const shortSynopsis = synopsis.length > 150 ? synopsis.substring(0, 147) + "..." : synopsis;
 
   return (
-    <Card className="relative w-[350px] h-[500px] flex-shrink-0 shadow-lg rounded-xl overflow-hidden text-white">
+    <Card className="relative w-[350px] h-[500px] flex-shrink-0 shadow-lg rounded-xl overflow-hidden text-white" tabIndex={0} autoFocus>
       <Image
         src={image_url}
         alt={title}

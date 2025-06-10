@@ -10,9 +10,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger, // Re-add this import
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"; // Re-add this import
 import {
   Select,
   SelectContent,
@@ -24,48 +24,51 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { addAnimeToList } from "@/app/swipe/actions";
 
-interface AddAnimeDialogProps {
+interface Anime {
   mal_id: number;
   title: string;
-  image_url: string;
-  onAnimeAdded: () => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  images: {
+    jpg: {
+      image_url: string;
+    };
+  };
 }
 
-export function AddAnimeDialog({
-  mal_id,
-  title,
-  image_url,
-  onAnimeAdded,
-  open,
-  onOpenChange,
-}: AddAnimeDialogProps) {
+interface AddAnimeDialogProps {
+  anime: Anime; // Change to accept an anime object
+  onAnimeAdded: () => void;
+}
+
+export function AddAnimeDialog({ anime, onAnimeAdded }: AddAnimeDialogProps) {
   const [status, setStatus] = useState("Planned");
   const [score, setScore] = useState(0); // Initialize with a default score
+  const [open, setOpen] = useState(false); // Manage dialog open state internally
 
   const handleAddToList = async () => {
     try {
       await addAnimeToList({
-        mal_id,
-        title,
-        image_url,
+        mal_id: anime.mal_id,
+        title: anime.title,
+        image_url: anime.images.jpg.image_url,
         status,
         score,
       });
-      // Optionally, add a success message or trigger a refresh of the user's list
       console.log("Anime added to list successfully!");
+      onAnimeAdded(); // Call the callback
+      setOpen(false); // Close the dialog on success
     } catch (error) {
       console.error("Error adding anime to list:", error);
-      // Optionally, display an error message
     }
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button className="w-full">Add to List</Button>
+      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Add {title} to your list?</AlertDialogTitle>
+          <AlertDialogTitle>Add {anime.title} to your list?</AlertDialogTitle>
           <AlertDialogDescription>
             Set the status and your score for this anime.
           </AlertDialogDescription>
@@ -104,12 +107,7 @@ export function AddAnimeDialog({
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => {
-              handleAddToList();
-              onAnimeAdded();
-            }}
-          >
+          <AlertDialogAction onClick={handleAddToList}>
             Add to List
           </AlertDialogAction>
         </AlertDialogFooter>

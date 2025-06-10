@@ -1,70 +1,100 @@
 "use server";
 
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-interface JikanAnimeEntry {
-  mal_id: number;
-  entry: {
-    mal_id: number;
-    url: string;
-    images: {
-      webp: {
-        image_url: string;
-        small_image_url: string;
-        large_image_url: string;
-      };
-    };
+interface MalAnimeEntry {
+  node: {
+    id: number;
     title: string;
+    main_picture: {
+      medium: string;
+      large: string;
+    };
   };
-  score: number;
-  status: string;
+  list_status: {
+    status: string;
+    score: number;
+  };
 }
 
 export async function fetchMalAnimeList(username: string) {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+  const supabase = await createSupabaseServerClient();
+  const { data: { user: sessionUser }, error: authError } = await supabase.auth.getUser();
 
-  if (!session) {
-    throw new Error("User not authenticated.");
+  if (authError) {
+    console.error("Auth error in fetchMalAnimeList:", authError);
+    throw new Error(`Authentication error: ${authError.message}`);
   }
 
-  const jikanApiUrl = `https://api.jikan.moe/v4/users/${username}/animelist`;
+  if (!sessionUser) {
+    console.error("User not authenticated in fetchMalAnimeList.");
+    throw new Error("User not authenticated.");
+  }
+  console.log("Session user in fetchMalAnimeList:", sessionUser.id);
+
+  const malApiBaseUrl = process.env.NEXT_PUBLIC_MAL_API_BASE_URL;
+  const malClientId = process.env.NEXT_PUBLIC_MAL_CLIENT_ID;
+
+  if (!malApiBaseUrl || !malClientId) {
+    throw new Error("MyAnimeList API base URL or client ID is not configured.");
+  }
+
+  const malApiUrl = `${malApiBaseUrl}/users/${username}/animelist?fields=list_status,main_picture`;
 
   try {
-    const response = await fetch(jikanApiUrl);
+    const response = await fetch(malApiUrl, {
+      headers: {
+        "X-MAL-CLIENT-ID": malClientId,
+      },
+    });
+
     if (!response.ok) {
       if (response.status === 404) {
         throw new Error("MyAnimeList user not found.");
       }
-      if (response.status === 429) {
-        throw new Error("Too many requests to MyAnimeList API. Please wait a moment and try again.");
-      }
-      if (response.status === 403) {
-        throw new Error("MyAnimeList user list is private or not accessible.");
-      }
-      throw new Error(`Failed to fetch MAL list: ${response.statusText}`);
+      throw new Error(`Failed to fetch MAL list: ${response.statusText} (Status: ${response.status})`);
     }
     const data = await response.json();
-    return data.data as JikanAnimeEntry[];
+
+    // After successfully fetching the MAL list, save the username to the profiles table
+    const { error: upsertError } = await supabase
+      .from('profiles')
+      .upsert({ id: sessionUser.id, mal_username: username }, { onConflict: 'id' });
+
+    if (upsertError) {
+      console.error("Supabase upsert error in fetchMalAnimeList:", upsertError);
+      throw new Error(`Failed to save MAL username: ${upsertError.message}`);
+    }
+
+    return data.data as MalAnimeEntry[];
   } catch (error: unknown) {
     console.error("Error fetching MAL list:", error);
     throw new Error(`Error fetching MAL list: ${(error as Error).message}`);
   }
 }
 
-export async function confirmImport(animeList: JikanAnimeEntry[]) {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+export async function confirmImport(animeList: MalAnimeEntry[], malUsername: string) { // Add malUsername parameter
+  const supabase = await createSupabaseServerClient();
+  const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!sessionUser) {
     throw new Error("User not authenticated.");
   }
 
-  const userId = session.user.id;
+  const userId = sessionUser.id;
 
   try {
+    // Upsert mal_username into profiles table
+    const { error: upsertProfileError } = await supabase
+      .from('profiles')
+      .upsert({ id: userId, mal_username: malUsername }, { onConflict: 'id' });
+
+    if (upsertProfileError) {
+      console.error("Error upserting profile:", upsertProfileError);
+      throw new Error(`Error saving MAL username to profile: ${upsertProfileError.message}`);
+    }
+
     // Delete existing UserAnimeEntry records for the current user
     const { error: deleteError } = await supabase
       .from("UserAnimeEntry")
@@ -83,7 +113,7 @@ export async function confirmImport(animeList: JikanAnimeEntry[]) {
       const { data: existingAnime, error: fetchAnimeError } = await supabase
         .from("Anime")
         .select("id, mal_id")
-        .eq("mal_id", entry.entry.mal_id)
+        .eq("mal_id", entry.node.id)
         .single();
 
       if (fetchAnimeError && fetchAnimeError.code !== "PGRST116") { // PGRST116 is "No rows found"
@@ -95,10 +125,10 @@ export async function confirmImport(animeList: JikanAnimeEntry[]) {
       if (!existingAnime) {
         // Anime does not exist, prepare to insert
         const newAnime = {
-          mal_id: entry.entry.mal_id,
-          title: entry.entry.title,
-          image_url: entry.entry.images.webp.image_url,
-          mal_url: entry.entry.url,
+          mal_id: entry.node.id,
+          title: entry.node.title,
+          image_url: entry.node.main_picture.large || entry.node.main_picture.medium,
+          mal_url: `https://myanimelist.net/anime/${entry.node.id}`, // Construct MAL URL
         };
         animeToInsert.push(newAnime);
         // We'll get the ID after bulk insert or by selecting again
@@ -110,8 +140,8 @@ export async function confirmImport(animeList: JikanAnimeEntry[]) {
       userAnimeEntriesToInsert.push({
         user_id: userId,
         anime_id: animeId!, // Will be updated after bulk insert if new anime
-        status: entry.status,
-        score: entry.score,
+        status: entry.list_status.status,
+        score: entry.list_status.score,
       });
     }
 
