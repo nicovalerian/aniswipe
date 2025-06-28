@@ -5,7 +5,8 @@ import { getRecommendations } from '@/lib/recommendation-api'; // Import getReco
 interface RecommendationStore {
   recommendations: AnimeRecommendation[];
   setRecommendations: (malUsername: string | null) => Promise<void>; // Change to accept malUsername
-  getNextAnime: () => AnimeRecommendation | undefined;
+getTopRecommendation: () => AnimeRecommendation | undefined;
+removeTopRecommendation: () => void;
 }
 
 export const useRecommendationStore = create<RecommendationStore>((set) => ({
@@ -16,23 +17,30 @@ export const useRecommendationStore = create<RecommendationStore>((set) => ({
       return;
     }
     try {
-      const malIds = await getRecommendations(malUsername);
-      const fetchedAnimes = await fetchAnimeDetails(malIds);
+      // Single API call to get full recommendations
+      const fetchedAnimes = await getRecommendations(malUsername);
       set({ recommendations: fetchedAnimes });
     } catch (error) {
       console.error("Error setting recommendations:", error);
       set({ recommendations: [] });
     }
   },
-  getNextAnime: () => {
-    let nextAnime: AnimeRecommendation | undefined;
+  getTopRecommendation: () => {
+    let topAnime: AnimeRecommendation | undefined;
     set((state) => {
       if (state.recommendations.length > 0) {
-        nextAnime = state.recommendations[0];
+        topAnime = state.recommendations[0];
+      }
+      return state;
+    });
+    return topAnime;
+  },
+  removeTopRecommendation: () => {
+    set((state) => {
+      if (state.recommendations.length > 0) {
         return { recommendations: state.recommendations.slice(1) };
       }
       return state;
     });
-    return nextAnime;
   },
 }));

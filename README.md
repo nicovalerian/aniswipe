@@ -1,58 +1,97 @@
 # AniSwipe
 
-A fun, Tinder-like app for discovering new anime. Swipe right to add to your list, left to pass. Import your existing MyAnimeList profile to get started!
+## 1. Project Overview
+AniSwipe is a full-stack application designed as an anime recommendation system with a unique swipe-based interface. The frontend is built with Next.js, providing a dynamic and responsive user experience, while the backend leverages Python and Flask to power the recommendation engine.
 
-## Key Features
+## 2. Prerequisites
+To set up and run AniSwipe, ensure you have the following software and tools installed:
 
-- **Anime Discovery:** Swipe through anime recommendations in a Tinder-style interface.
-- **MyAnimeList Integration:** Import your existing MyAnimeList profile to seamlessly sync your anime list.
-- **User Authentication:** Secure user accounts and personalized experiences with Supabase Auth.
-- **Personalized Lists:** Keep track of the anime you've liked and disliked.
-- **Dynamic UI:** Built with Next.js and Tailwind CSS for a responsive and modern user experience.
+*   Node.js (v20 or later)
+*   `pnpm` (a fast, disk space efficient package manager)
+*   Python (3.8+)
+*   `pip` (Python package installer)
 
-## Tech Stack
+## 3. Environment Variables
+AniSwipe requires certain environment variables to function correctly. Create a file named `.env` in the root directory of the project and populate it with the following variables:
 
-- **Framework:** [Next.js](https://nextjs.org/)
-- **Language:** [TypeScript](https://www.typescriptlang.org/)
-- **Backend:** [Supabase](https://supabase.io/)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **UI Components:** [shadcn/ui](https://ui.shadcn.com/)
-- **Anime Data:** [Jikan API](https://jikan.moe/)
+```env
+# .env.example
+# Get your MyAnimeList Client ID from the developer portal
+NEXT_PUBLIC_MAL_CLIENT_ID="YOUR_MAL_CLIENT_ID"
 
-## Getting Started
+# Supabase credentials for authentication and database
+NEXT_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_URL"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+```
 
-### Prerequisites
+*   `NEXT_PUBLIC_MAL_CLIENT_ID`: Your client ID from the MyAnimeList developer portal. This is required for accessing the MyAnimeList API.
+*   `NEXT_PUBLIC_SUPABASE_URL`: The URL of your Supabase project. Used for authentication and database interactions.
+*   `NEXT_PUBLIC_SUPABASE_ANON_KEY`: The anonymous public key for your Supabase project.
 
-- Node.js and npm installed.
+## 4. Frontend Setup
+Follow these steps to get the Next.js frontend running:
 
-### Installation
-
-1.  Clone the repository:
+*   **Installation:**
+    Navigate to the project's root directory in your terminal:
     ```bash
-    git clone https://github.com/your-username/aniswipe.git
-    cd aniswipe
+    cd /path/to/aniswipe
     ```
-
-2.  Install dependencies:
+    Install the frontend dependencies:
     ```bash
-    npm install
+    pnpm install
     ```
-
-3.  Set up environment variables:
-
-    Create a `.env.local` file in the root of the project and add the following:
-    ```
-    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-    ```
-
-4.  Run the development server:
+*   **Running the Development Server:**
+    Start the Next.js development server:
     ```bash
-    npm run dev
+    pnpm dev
     ```
+    The frontend application will be accessible at `http://localhost:3000`.
 
-5.  Open [http://localhost:3000](http://localhost:3000) in your browser.
+## 5. Backend Setup
+Follow these steps to get the Python/Flask backend running:
 
-## Screenshots
+*   **Virtual Environment (Recommended):**
+    It is highly recommended to use a Python virtual environment to manage dependencies.
+    Create a virtual environment:
+    ```bash
+    python -m venv venv
+    ```
+    Activate the virtual environment:
+    *   On Windows (PowerShell):
+        ```powershell
+        .\venv\Scripts\activate
+        ```
+    *   On Windows (Command Prompt):
+        ```cmd
+        venv\Scripts\activate.bat
+        ```
+    *   On macOS/Linux:
+        ```bash
+        source venv/bin/activate
+        ```
+*   **Installation:**
+    Install the required Python packages:
+    ```bash
+    pip install -r api/requirements.txt
+    ```
+*   **Running the Development Server:**
+    Start the Flask backend server:
+    ```bash
+    python api/main.py
+    ```
+    The backend API will be available at `http://localhost:5000`.
 
-*Coming Soon!*
+## 6. Running the Application
+To run the complete AniSwipe application, both the frontend and backend servers need to be active concurrently.
+
+1.  Open two separate terminal windows or tabs.
+2.  In the first terminal, navigate to the project root and start the frontend:
+    ```bash
+    cd /path/to/aniswipe
+    pnpm dev
+    ```
+3.  In the second terminal, navigate to the project root, activate your Python virtual environment (if not already active), and start the backend:
+    ```bash
+    cd /path/to/aniswipe
+    # Activate virtual environment (e.g., source venv/bin/activate)
+    python api/main.py

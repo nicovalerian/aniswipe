@@ -138,7 +138,7 @@ export async function getRecommendations() {
   return filteredRecommendations.map((anime) => ({
     mal_id: anime.mal_id,
     title: anime.title,
-    image_url: anime.images.jpg.large_image_url,
+    image_url: anime.images?.jpg?.large_image_url,
     synopsis: anime.synopsis,
     score: anime.score,
     genres: anime.genres.map((genre) => genre.name),

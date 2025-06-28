@@ -53,7 +53,7 @@ export function UserAnimeList() {
   return (
     <div className="mt-8 overflow-y-auto h-[calc(100vh-250px)]"> {/* Adjust height as needed */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {animeList.map((entry) => (
+        {animeList.filter(entry => entry.Anime).map((entry) => (
           <Card key={entry.anime_id} className="flex flex-col border border-border rounded-lg shadow-sm overflow-hidden bg-card text-card-foreground">
             <CardHeader className="p-0">
               {entry.Anime.image_url && (

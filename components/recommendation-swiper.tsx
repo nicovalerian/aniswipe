@@ -22,7 +22,7 @@ interface RecommendationSwiperProps {
 }
 
 export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps) {
-  const { recommendations, setRecommendations, getNextAnime } =
+  const { recommendations, setRecommendations, removeTopRecommendation } =
     useRecommendationStore();
   const [lastDirection, setLastDirection] = useState<string>();
   const [selectedAnime, setSelectedAnime] =
@@ -50,11 +50,9 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
       } else if (direction === "up") {
         // The AddAnimeDialog now manages its own open state, so no need to set showAddDialog here
       }
-      // After swipe, remove the swiped anime from the store
-      // Assuming getNextAnime also removes the current anime from the list
-      getNextAnime();
+      // The store will be updated by the Swiper's onSlideChange event
     },
-    [getNextAnime, setSelectedAnime, setLastDirection]
+    [removeTopRecommendation, setSelectedAnime, setLastDirection]
   );
 
   const handleDialogClose = () => {
@@ -100,14 +98,9 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
           className="mySwiper w-full h-full"
           onSwiper={(swiper) => (swiperRef.current = swiper)}
           onSlideChange={(swiper) => {
-            // When slide changes, it means the previous card was "swiped"
-            // We need to manually trigger the handleSwipe for the previous card
-            // This is a simplification, actual swipe direction would need more logic
+            // When the active slide changes, remove the previous slide from the store
             if (swiper.previousIndex !== undefined && swiper.previousIndex < recommendations.length) {
-              const swipedAnime = recommendations[swiper.previousIndex];
-              // Determine direction based on slide change (simplified for now)
-              const direction = swiper.activeIndex > swiper.previousIndex ? 'right' : 'left';
-              handleSwipe(direction, swipedAnime);
+              removeTopRecommendation();
             }
           }}
         >

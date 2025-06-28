@@ -74,7 +74,7 @@ export async function fetchMalAnimeList(username: string) {
   }
 }
 
-export async function confirmImport(animeList: MalAnimeEntry[], malUsername: string) { // Add malUsername parameter
+export async function confirmImport(animeList: MalAnimeEntry[], malUsername: string) {
   const supabase = await createSupabaseServerClient();
   const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
@@ -95,6 +95,67 @@ export async function confirmImport(animeList: MalAnimeEntry[], malUsername: str
       throw new Error(`Error saving MAL username to profile: ${upsertProfileError.message}`);
     }
 
+    // First, get all mal_ids from the incoming list
+    const malIds = animeList.map((entry) => entry.node.id);
+
+    // Fetch all existing anime from our DB that match the mal_ids
+    const { data: existingAnimes, error: fetchAnimesError } = await supabase
+      .from("Anime")
+      .select("id, mal_id")
+      .in("mal_id", malIds);
+
+    if (fetchAnimesError) {
+      throw new Error(`Error fetching existing anime: ${fetchAnimesError.message}`);
+    }
+
+    const animeIdMap = new Map(
+      existingAnimes.map((anime) => [anime.mal_id, anime.id])
+    );
+
+    // Find which anime are new
+    const newAnimeToInsert = animeList
+      .filter((entry) => !animeIdMap.has(entry.node.id))
+      .map((entry) => ({
+        mal_id: entry.node.id,
+        title: entry.node.title,
+        image_url:
+          entry.node.main_picture.large || entry.node.main_picture.medium,
+      }));
+
+    // If there are new animes, insert them
+    if (newAnimeToInsert.length > 0) {
+      const { data: insertedAnimes, error: insertAnimeError } = await supabase
+        .from("Anime")
+        .insert(newAnimeToInsert)
+        .select("id, mal_id");
+
+      if (insertAnimeError) {
+        throw new Error(`Error inserting new anime: ${insertAnimeError.message}`);
+      }
+
+      // Add the newly inserted animes to our map
+      if (insertedAnimes) {
+        for (const anime of insertedAnimes) {
+          animeIdMap.set(anime.mal_id, anime.id);
+        }
+      }
+    }
+
+    // Now, create the UserAnimeEntry objects
+    const userAnimeEntriesToInsert = animeList.map((entry) => {
+      const animeId = animeIdMap.get(entry.node.id);
+      if (!animeId) {
+        console.error(`Could not find id for mal_id ${entry.node.id}`);
+        return null;
+      }
+      return {
+        user_id: userId,
+        anime_id: animeId,
+        status: entry.list_status.status,
+        score: entry.list_status.score,
+      };
+    }).filter(Boolean);
+
     // Delete existing UserAnimeEntry records for the current user
     const { error: deleteError } = await supabase
       .from("UserAnimeEntry")
@@ -105,73 +166,15 @@ export async function confirmImport(animeList: MalAnimeEntry[], malUsername: str
       throw new Error(`Error deleting existing entries: ${deleteError.message}`);
     }
 
-    const animeToInsert: { mal_id: number; title: string; image_url: string; mal_url: string }[] = [];
-    const userAnimeEntriesToInsert: { user_id: string; anime_id: number; status: string; score: number }[] = [];
-
-    for (const entry of animeList) {
-      // Check if anime exists in our Anime table
-      const { data: existingAnime, error: fetchAnimeError } = await supabase
-        .from("Anime")
-        .select("id, mal_id")
-        .eq("mal_id", entry.node.id)
-        .single();
-
-      if (fetchAnimeError && fetchAnimeError.code !== "PGRST116") { // PGRST116 is "No rows found"
-        console.error("Error fetching anime:", fetchAnimeError);
-      }
-
-      let animeId: number | null = null;
-
-      if (!existingAnime) {
-        // Anime does not exist, prepare to insert
-        const newAnime = {
-          mal_id: entry.node.id,
-          title: entry.node.title,
-          image_url: entry.node.main_picture.large || entry.node.main_picture.medium,
-          mal_url: `https://myanimelist.net/anime/${entry.node.id}`, // Construct MAL URL
-        };
-        animeToInsert.push(newAnime);
-        // We'll get the ID after bulk insert or by selecting again
-      } else {
-        animeId = existingAnime.id;
-      }
-
-      // Prepare UserAnimeEntry
-      userAnimeEntriesToInsert.push({
-        user_id: userId,
-        anime_id: animeId!, // Will be updated after bulk insert if new anime
-        status: entry.list_status.status,
-        score: entry.list_status.score,
-      });
-    }
-
-    // Bulk insert new anime if any
-    if (animeToInsert.length > 0) {
-      const { data: insertedAnime, error: insertAnimeError } = await supabase
-        .from("Anime")
-        .insert(animeToInsert)
-        .select("id, mal_id");
-
-      if (insertAnimeError) {
-        throw new Error(`Error inserting new anime: ${insertAnimeError.message}`);
-      }
-
-      // Update anime_id in userAnimeEntriesToInsert for newly inserted anime
-      userAnimeEntriesToInsert.forEach((userEntry) => {
-        const matchingNewAnime = insertedAnime.find((newAni) => newAni.mal_id === userEntry.anime_id);
-        if (matchingNewAnime) {
-          userEntry.anime_id = matchingNewAnime.id;
-        }
-      });
-    }
-
     // Bulk insert user anime entries
-    const { error: insertUserEntriesError } = await supabase
-      .from("UserAnimeEntry")
-      .insert(userAnimeEntriesToInsert);
+    if (userAnimeEntriesToInsert.length > 0) {
+      const { error: insertUserEntriesError } = await supabase
+        .from("UserAnimeEntry")
+        .insert(userAnimeEntriesToInsert as any);
 
-    if (insertUserEntriesError) {
-      throw new Error(`Error inserting user anime entries: ${insertUserEntriesError.message}`);
+      if (insertUserEntriesError) {
+        throw new Error(`Error inserting user anime entries: ${insertUserEntriesError.message}`);
+      }
     }
 
     revalidatePath("/swipe"); // Revalidate the swipe page to show updated list

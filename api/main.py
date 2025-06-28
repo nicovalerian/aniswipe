@@ -13,6 +13,19 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+def fetch_anime_details_from_jikan(mal_id):
+    """Fetches details for a single anime from the Jikan API."""
+    url = f"https://api.jikan.moe/v4/anime/{mal_id}"
+    try:
+        # Add a small delay to avoid hitting rate limits too hard
+        time.sleep(0.5)
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json().get('data')
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching Jikan data for MAL ID {mal_id}: {e}")
+        return None
+
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes
@@ -152,8 +165,8 @@ def generate_recommendations_logic(username):
     potential_recommendations = []
     for i, score in sim_scores:
         anime_id = df_processed['anime_id'].iloc[i]
-        if anime_id not in watched_ids:
-            potential_recommendations.append({'index': i, 'anime_id': anime_id, 'similarity': score})
+        # if anime_id not in watched_ids: # Commented out to disable filtering watched anime
+        potential_recommendations.append({'index': i, 'anime_id': anime_id, 'similarity': score})
 
     if not potential_recommendations:
         return "No potential recommendations found after filtering.", []
@@ -174,9 +187,19 @@ def generate_recommendations_logic(username):
     )
 
     recs_with_features = recs_with_features.sort_values(by='rerank_score', ascending=False)
-    top_n_recommendations = recs_with_features['anime_id'].head(50).tolist()
+    top_n_recommendation_ids = recs_with_features['anime_id'].head(20).tolist() # Limit to 20 to be safe
 
-    return "Recommendations generated successfully.", top_n_recommendations
+    # NEW: Fetch full details for each recommendation
+    full_recommendations = []
+    for anime_id in top_n_recommendation_ids:
+        details = fetch_anime_details_from_jikan(anime_id)
+        if details:
+            full_recommendations.append(details)
+
+    if not full_recommendations:
+        return "Generated recommendations, but failed to fetch details from Jikan.", []
+
+    return "Recommendations generated successfully.", full_recommendations
 
 @app.route('/recommend', methods=['POST'])
 def recommend_anime():
@@ -191,7 +214,7 @@ def recommend_anime():
     if recommendations:
         return jsonify({"message": message, "recommendations": recommendations}), 200
     else:
-        return jsonify({"error": message}), 500
+        return jsonify({"message": message, "recommendations": []}), 500
 
 if __name__ == '__main__':
     load_and_preprocess_data()
