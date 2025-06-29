@@ -42,8 +42,8 @@ export default async function RootLayout({
   )
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
 
   return (
@@ -57,7 +57,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-            <SessionProvider session={session}>
+            <SessionProvider user={user}>
               <Navbar />
               {children}
             </SessionProvider>

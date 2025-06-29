@@ -73,7 +73,7 @@ export async function addAnimeToList(data: AddAnimeEntryData) {
   const { error: upsertEntryError } = await supabase
     .from("UserAnimeEntry")
     .upsert(
-      { user_id: userId, anime_id: animeId, status, user_score: score },
+      { user_id: userId, anime_id: animeId, status, user_score: score ?? 0 },
       { onConflict: "user_id,anime_id" }
     );
 
@@ -104,43 +104,58 @@ export async function getUserAnimeList() {
 
 export async function getRecommendations() {
   const supabase = await createSupabaseServerClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
   if (userError || !user) {
     throw new Error("User not authenticated.");
   }
-  const userId = user.id;
 
-  // 1. Fetch top/popular anime from Jikan API
-  const res = await fetch("https://api.jikan.moe/v4/top/anime?limit=20"); // Fetch a reasonable limit
-  if (!res.ok) {
-    throw new Error("Failed to fetch top anime from Jikan API.");
-  }
-  const jikanData = await res.json();
-  const topAnime = jikanData.data;
+  // 1. Get the user's MAL username from their profile
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("mal_username")
+    .eq("id", user.id)
+    .single();
 
-  // 2. Get user's existing anime entries
-  const { data: userAnimeEntries, error: userAnimeError } = await supabase
-    .from("UserAnimeEntry")
-    .select("anime_id, Anime(mal_id)")
-    .eq("user_id", userId);
-
-  if (userAnimeError) {
-    throw userAnimeError;
+  if (profileError || !profile || !profile.mal_username) {
+    console.error("Could not find MAL username for the user.", profileError);
+    return [];
   }
 
-  const userMalIds = new Set(userAnimeEntries.map((entry: { Anime: Array<{ mal_id: number }> | null }) => entry.Anime?.[0]?.mal_id));
+  const malUsername = profile.mal_username;
 
-  // 3. Filter out anime that the user already has
-  const filteredRecommendations = (topAnime as JikanAnime[]).filter((anime) => {
-    return !userMalIds.has(anime.mal_id);
-  });
+  // 2. Call the Python Recommendation API
+  try {
+    const res = await fetch("http://127.0.0.1:5000/recommend", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username: malUsername }),
+    });
 
-  return filteredRecommendations.map((anime) => ({
-    mal_id: anime.mal_id,
-    title: anime.title,
-    image_url: anime.images?.jpg?.large_image_url,
-    synopsis: anime.synopsis,
-    score: anime.score,
-    genres: anime.genres.map((genre) => genre.name),
-  }));
+    if (!res.ok) {
+      const errorBody = await res.text();
+      throw new Error(
+        `Failed to fetch recommendations from Python API: ${res.status} ${res.statusText} - ${errorBody}`
+      );
+    }
+
+    const data = await res.json();
+
+    // The Python API returns a list of Jikan-like objects. We need to map them.
+    return (data.recommendations as JikanAnime[]).map((anime) => ({
+      mal_id: anime.mal_id,
+      title: anime.title,
+      image_url: anime.images?.jpg?.large_image_url,
+      synopsis: anime.synopsis,
+      score: anime.score,
+      genres: anime.genres.map((genre) => genre.name),
+    }));
+  } catch (error) {
+    console.error("Error calling recommendation API:", error);
+    return [];
+  }
 }

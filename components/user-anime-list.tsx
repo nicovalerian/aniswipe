@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { getUserAnimeList } from "@/app/swipe/actions";
+import { Badge } from "@/components/ui/badge";
 
 interface UserAnimeEntry {
   anime_id: string;
@@ -50,32 +51,77 @@ export function UserAnimeList() {
     );
   }
 
+  const formatStatus = (status: string) => {
+    return status
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 0 && score <= 5) {
+      return { backgroundColor: "hsl(0, 70%, 50%)" }; // Red
+    }
+    if (score >= 6 && score <= 7) {
+      return { backgroundColor: "hsl(40, 90%, 50%)" }; // Greenish-Orange
+    }
+    if (score >= 8 && score <= 10) {
+      return { backgroundColor: "hsl(120, 60%, 45%)" }; // Green
+    }
+    return {}; // No color for unscored or out of range
+  };
+
   return (
     <div className="mt-8 overflow-y-auto h-[calc(100vh-250px)]"> {/* Adjust height as needed */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {animeList.filter(entry => entry.Anime).map((entry) => (
-          <Card key={entry.anime_id} className="flex flex-col border border-border rounded-lg shadow-sm overflow-hidden bg-card text-card-foreground">
-            <CardHeader className="p-0">
-              {entry.Anime.image_url && (
-                <div className="relative w-full h-48 sm:h-56 lg:h-64 overflow-hidden">
-                  <Image
-                    src={entry.Anime.image_url}
-                    alt={entry.Anime.title}
-                    fill
-                    style={{ objectFit: "cover" }}
-                    className="rounded-t-lg transition-transform duration-300 hover:scale-105"
-                  />
+        {animeList.filter(entry => entry.Anime).map((entry, index) => (
+          <div key={entry.anime_id} className="relative overflow-hidden rounded-lg aspect-[2/3]">
+            <Image
+              src={entry.Anime.image_url}
+              alt={entry.Anime.title}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              priority={index < 6} // Prioritize loading images for the first few items
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end text-white">
+              <div className="flex flex-col p-4">
+                <h3 className="text-lg font-bold mb-2 line-clamp-2">{entry.Anime.title}</h3>
+                <div className="flex items-center gap-x-2">
+                  <Badge
+                    variant={(() => {
+                      switch (entry.status) {
+                        case "completed":
+                          return "outline";
+                        case "plan_to_watch":
+                          return "secondary";
+                        case "dropped":
+                          return "destructive";
+                        case "watching":
+                        case "on_hold":
+                        default:
+                          return "default";
+                      }
+                    })()}
+                    className={
+                      entry.status === "completed"
+                        ? "bg-zinc-200 text-zinc-900 border-transparent"
+                        : ""
+                    }
+                  >
+                    {formatStatus(entry.status)}
+                  </Badge>
+                  {entry.score > 0 && (
+                    <Badge
+                      style={getScoreColor(entry.score)}
+                      className="text-white border-transparent"
+                    >
+                      Score: {entry.score}/10
+                    </Badge>
+                  )}
                 </div>
-              )}
-            </CardHeader>
-            <CardContent className="p-4 flex-grow">
-              <CardTitle className="text-lg font-semibold mb-2 line-clamp-2 text-primary">
-                {entry.Anime.title}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Status: <span className="font-medium text-foreground">{entry.status}</span></p>
-              <p className="text-sm text-muted-foreground">Score: <span className="font-medium text-foreground">{entry.score}/10</span></p>
-            </CardContent>
-          </Card>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>

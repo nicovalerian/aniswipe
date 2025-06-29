@@ -18,7 +18,7 @@ def fetch_anime_details_from_jikan(mal_id):
     url = f"https://api.jikan.moe/v4/anime/{mal_id}"
     try:
         # Add a small delay to avoid hitting rate limits too hard
-        time.sleep(0.5)
+        time.sleep(1)
         response = requests.get(url)
         response.raise_for_status()
         return response.json().get('data')
@@ -165,8 +165,8 @@ def generate_recommendations_logic(username):
     potential_recommendations = []
     for i, score in sim_scores:
         anime_id = df_processed['anime_id'].iloc[i]
-        # if anime_id not in watched_ids: # Commented out to disable filtering watched anime
-        potential_recommendations.append({'index': i, 'anime_id': anime_id, 'similarity': score})
+        if anime_id not in watched_ids:
+            potential_recommendations.append({'index': i, 'anime_id': anime_id, 'similarity': score})
 
     if not potential_recommendations:
         return "No potential recommendations found after filtering.", []
@@ -180,14 +180,15 @@ def generate_recommendations_logic(username):
         on='anime_id'
     )
 
+    # Adjusted rerank_score to prioritize similarity more
     recs_with_features['rerank_score'] = (
-        recs_with_features['similarity'] *
+        (recs_with_features['similarity'] ** 1.5) * # Emphasize similarity
         (recs_with_features['score'] + 1) *
-        np.log1p(recs_with_features['members'])
+        np.log1p(recs_with_features['members'] / 1000) # Dampen popularity effect
     )
 
     recs_with_features = recs_with_features.sort_values(by='rerank_score', ascending=False)
-    top_n_recommendation_ids = recs_with_features['anime_id'].head(20).tolist() # Limit to 20 to be safe
+    top_n_recommendation_ids = recs_with_features['anime_id'].head(20).tolist()
 
     # NEW: Fetch full details for each recommendation
     full_recommendations = []

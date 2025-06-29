@@ -48,50 +48,70 @@ Follow these steps to get the Next.js frontend running:
     The frontend application will be accessible at `http://localhost:3000`.
 
 ## 5. Backend Setup
-Follow these steps to get the Python/Flask backend running:
 
-*   **Virtual Environment (Recommended):**
-    It is highly recommended to use a Python virtual environment to manage dependencies.
-    Create a virtual environment:
+To run the backend server, follow these steps:
+
+### 1. Navigate to the API Directory
+
+First, open your terminal and change to the `api` directory:
+
+```bash
+cd api
+```
+
+> **Note:** All subsequent commands in this section should be run from within the `api` directory.
+
+### 2. Create and Activate a Virtual Environment
+
+It's recommended to use a virtual environment to manage project-specific dependencies.
+
+**Create the virtual environment:**
+
+```bash
+python -m venv venv
+```
+
+**Activate the virtual environment:**
+
+*   **On Windows:**
+
     ```bash
-    python -m venv venv
+    .\venv\Scripts\activate
     ```
-    Activate the virtual environment:
-    *   On Windows (PowerShell):
-        ```powershell
-        .\venv\Scripts\activate
-        ```
-    *   On Windows (Command Prompt):
-        ```cmd
-        venv\Scripts\activate.bat
-        ```
-    *   On macOS/Linux:
-        ```bash
-        source venv/bin/activate
-        ```
-*   **Installation:**
-    Install the required Python packages:
+
+*   **On macOS and Linux:**
+
     ```bash
-    pip install -r api/requirements.txt
+    source venv/bin/activate
     ```
-*   **Running the Development Server:**
-    Start the Flask backend server:
-    ```bash
-    python api/main.py
-    ```
-    The backend API will be available at `http://localhost:5000`.
+
+### 3. Install Dependencies
+
+With the virtual environment activated, install the required packages using `pip`:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Run the Backend Server
+
+Finally, start the server with the following command:
+
+```bash
+python main.py
+```
+
+The server should now be running and accessible at the address printed to the console, which is typically `http://127.0.0.1:5000`.
 
 ## 6. Running the Application
+
 To run the complete AniSwipe application, both the frontend and backend servers need to be active concurrently.
 
-1.  Open two separate terminal windows or tabs.
-2.  In the first terminal, navigate to the project root and start the frontend:
+1.  **Start the Frontend:**
+    Open a terminal, navigate to the project root, and start the Next.js development server:
     ```bash
-    cd /path/to/aniswipe
     pnpm dev
     ```
-3.  In the second terminal, navigate to the project root, activate your Python virtual environment (if not already active), and start the backend:
-    ```bash
-    cd /path/to/aniswipe
-    # Activate virtual environment (e.g., source venv/bin/activate)
-    python api/main.py
+
+2.  **Start the Backend:**
+    Open a second terminal and follow the "Backend Setup" instructions to start the Python/Flask server.

@@ -76,13 +76,15 @@ export async function fetchMalAnimeList(username: string) {
 
 export async function confirmImport(animeList: MalAnimeEntry[], malUsername: string) {
   const supabase = await createSupabaseServerClient();
-  const { data: { user: sessionUser } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!sessionUser) {
+  if (!user) {
     throw new Error("User not authenticated.");
   }
-
-  const userId = sessionUser.id;
+ 
+  const userId = user.id;
 
   try {
     // Upsert mal_username into profiles table

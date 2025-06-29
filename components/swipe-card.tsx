@@ -14,13 +14,15 @@ export function SwipeCard({ title, image_url, synopsis, score, genres }: SwipeCa
   const shortSynopsis = synopsis.length > 150 ? synopsis.substring(0, 147) + "..." : synopsis;
 
   return (
-    <Card className="relative w-[350px] h-[500px] flex-shrink-0 shadow-lg rounded-xl overflow-hidden text-white" tabIndex={0} autoFocus>
+    <Card className="relative w-full h-full flex-shrink-0 shadow-lg rounded-xl overflow-hidden text-white" tabIndex={0} autoFocus>
       <Image
         src={image_url}
         alt={title}
         fill
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         style={{ objectFit: "cover" }}
         className="absolute inset-0 z-0"
+        priority
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" />
       <div className="relative z-20 flex flex-col justify-end h-full p-6">

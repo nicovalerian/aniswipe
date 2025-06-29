@@ -50,9 +50,9 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
       } else if (direction === "up") {
         // The AddAnimeDialog now manages its own open state, so no need to set showAddDialog here
       }
-      // The store will be updated by the Swiper's onSlideChange event
+      // The store will be updated by the Swiper's onSlideChange event, but only when the slide actually advances.
     },
-    [removeTopRecommendation, setSelectedAnime, setLastDirection]
+    [setSelectedAnime, setLastDirection]
   );
 
   const handleDialogClose = () => {
@@ -65,12 +65,12 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
     const currentAnime = recommendations[0]; // Assuming the first item is the current one
 
     let direction = "";
-    if (event.key === "ArrowRight") {
+    if (event.key === "ArrowRight") { // User wants to "like" (visual swipe right)
       direction = "right";
-      swiperRef.current.slideNext(); // Simulate swipe right
-    } else if (event.key === "ArrowLeft") {
+      swiperRef.current.slideNext(); // Always advance the card
+    } else if (event.key === "ArrowLeft") { // User wants to "skip" (visual swipe left)
       direction = "left";
-      swiperRef.current.slidePrev(); // Simulate swipe left
+      swiperRef.current.slideNext(); // Always advance the card
     } else if (event.key === "ArrowUp") {
       direction = "up";
       // Swiper doesn't have a direct "up" swipe, so we'll just trigger the dialog
@@ -89,17 +89,18 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
   }, [handleKeyDown]);
 
   return (
-    <div className="relative flex justify-center items-center w-full h-[500px]">
+    <div className="flex flex-col items-center justify-center w-full h-full p-4">
       {recommendations.length > 0 ? (
         <Swiper
           effect={'cards'}
           grabCursor={true}
           modules={[EffectCards]}
-          className="mySwiper w-full h-full"
+          className="mySwiper w-[350px] h-[500px]"
           onSwiper={(swiper) => (swiperRef.current = swiper)}
           onSlideChange={(swiper) => {
-            // When the active slide changes, remove the previous slide from the store
-            if (swiper.previousIndex !== undefined && swiper.previousIndex < recommendations.length) {
+            // Only remove the top recommendation if the Swiper has truly advanced to the next slide.
+            // This prevents double-skipping and ensures removal only for forward movements.
+            if (swiper.previousIndex !== undefined && swiper.activeIndex === swiper.previousIndex + 1) {
               removeTopRecommendation();
             }
           }}
