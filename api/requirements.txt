@@ -5,4 +5,4 @@ numpy
 Flask
 Flask-CORS
 python-dotenv
-requests
+gunicorn

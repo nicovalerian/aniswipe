@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 interface AnimeData {
@@ -10,20 +11,7 @@ interface AnimeData {
 
 interface AddAnimeEntryData extends AnimeData {
   status: string;
-  score: number | null;
-}
-
-interface JikanAnime {
-  mal_id: number;
-  title: string;
-  images: {
-    jpg: {
-      large_image_url: string;
-    };
-  };
-  synopsis: string;
-  score: number;
-  genres: { name: string }[];
+  score?: number | null; // Make score optional and nullable
 }
 
 export async function searchAnime(query: string) {
@@ -41,45 +29,40 @@ export async function addAnimeToList(data: AddAnimeEntryData) {
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) {
+    console.error("Authentication error in addAnimeToList:", userError);
     throw new Error("User not authenticated.");
   }
   const userId = user.id;
 
-  // Check if anime exists in our Anime table, if not, add it
-  const { data: animeExists, error: fetchAnimeError } = await supabase
+  // Upsert anime into the Anime table
+  const { data: upsertedAnime, error: upsertAnimeError } = await supabase
     .from("Anime")
+    .upsert({ mal_id, title, image_url }, { onConflict: "mal_id" }) // Assuming mal_id is unique
     .select("id")
-    .eq("mal_id", mal_id)
     .single();
 
-  let animeId: string;
-  if (fetchAnimeError || !animeExists) {
-    // Anime does not exist, insert it
-    const { data: newAnime, error: insertAnimeError } = await supabase
-      .from("Anime")
-      .insert({ mal_id, title, image_url })
-      .select("id")
-      .single();
-
-    if (insertAnimeError || !newAnime) {
-      throw insertAnimeError || new Error("Failed to insert new anime.");
-    }
-    animeId = newAnime.id;
-  } else {
-    animeId = animeExists.id;
+  if (upsertAnimeError || !upsertedAnime) {
+    console.error("Failed to upsert anime:", upsertAnimeError);
+    throw upsertAnimeError || new Error("Failed to upsert anime.");
   }
+  const animeId = upsertedAnime.id;
 
   // Create or update UserAnimeEntry
   const { error: upsertEntryError } = await supabase
     .from("UserAnimeEntry")
     .upsert(
-      { user_id: userId, anime_id: animeId, status, user_score: score ?? 0 },
+      { user_id: userId, anime_id: animeId, status, score: score }, // Use 'score' as the column name
       { onConflict: "user_id,anime_id" }
     );
 
   if (upsertEntryError) {
+    console.error("Failed to upsert UserAnimeEntry:", upsertEntryError);
     throw upsertEntryError;
   }
+
+  // Revalidate the path to show updated list and the user's anime list
+  revalidatePath("/swipe");
+  revalidatePath("/user-anime-list"); // Assuming this is the path for the user's anime list
 }
 
 export async function getUserAnimeList() {
@@ -100,62 +83,4 @@ export async function getUserAnimeList() {
   }
 
   return userAnimeEntries;
-}
-
-export async function getRecommendations() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) {
-    throw new Error("User not authenticated.");
-  }
-
-  // 1. Get the user's MAL username from their profile
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("mal_username")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile || !profile.mal_username) {
-    console.error("Could not find MAL username for the user.", profileError);
-    return [];
-  }
-
-  const malUsername = profile.mal_username;
-
-  // 2. Call the Python Recommendation API
-  try {
-    const res = await fetch("http://127.0.0.1:5000/recommend", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username: malUsername }),
-    });
-
-    if (!res.ok) {
-      const errorBody = await res.text();
-      throw new Error(
-        `Failed to fetch recommendations from Python API: ${res.status} ${res.statusText} - ${errorBody}`
-      );
-    }
-
-    const data = await res.json();
-
-    // The Python API returns a list of Jikan-like objects. We need to map them.
-    return (data.recommendations as JikanAnime[]).map((anime) => ({
-      mal_id: anime.mal_id,
-      title: anime.title,
-      image_url: anime.images?.jpg?.large_image_url,
-      synopsis: anime.synopsis,
-      score: anime.score,
-      genres: anime.genres.map((genre) => genre.name),
-    }));
-  } catch (error) {
-    console.error("Error calling recommendation API:", error);
-    return [];
-  }
 }

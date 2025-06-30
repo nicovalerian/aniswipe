@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import SessionProvider from "@/components/session-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from "next/headers";
 
@@ -61,6 +62,7 @@ export default async function RootLayout({
               <Navbar />
               {children}
             </SessionProvider>
+            <Toaster />
         </ThemeProvider>
       </body>
     </html>

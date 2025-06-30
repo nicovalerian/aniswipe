@@ -40,22 +40,28 @@ export async function fetchMalAnimeList(username: string) {
     throw new Error("MyAnimeList API base URL or client ID is not configured.");
   }
 
-  const malApiUrl = `${malApiBaseUrl}/users/${username}/animelist?fields=list_status,main_picture`;
+  let allAnimeEntries: MalAnimeEntry[] = [];
+  let nextUrl: string | null = `${malApiBaseUrl}/users/${username}/animelist?fields=list_status,main_picture&limit=100`; // Start with a limit
 
   try {
-    const response = await fetch(malApiUrl, {
-      headers: {
-        "X-MAL-CLIENT-ID": malClientId,
-      },
-    });
+    while (nextUrl) {
+      const response: Response = await fetch(nextUrl, {
+        headers: {
+          "X-MAL-CLIENT-ID": malClientId,
+        },
+      });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error("MyAnimeList user not found.");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("MyAnimeList user not found.");
+        }
+        throw new Error(`Failed to fetch MAL list: ${response.statusText} (Status: ${response.status})`);
       }
-      throw new Error(`Failed to fetch MAL list: ${response.statusText} (Status: ${response.status})`);
+      const data: { data: MalAnimeEntry[]; paging?: { next?: string } } = await response.json();
+
+      allAnimeEntries = allAnimeEntries.concat(data.data as MalAnimeEntry[]);
+      nextUrl = data.paging?.next || null; // Get the URL for the next page, if it exists
     }
-    const data = await response.json();
 
     // After successfully fetching the MAL list, save the username to the profiles table
     const { error: upsertError } = await supabase
@@ -67,7 +73,8 @@ export async function fetchMalAnimeList(username: string) {
       throw new Error(`Failed to save MAL username: ${upsertError.message}`);
     }
 
-    return data.data as MalAnimeEntry[];
+    console.log(`Successfully fetched ${allAnimeEntries.length} anime entries from MyAnimeList.`);
+    return allAnimeEntries;
   } catch (error: unknown) {
     console.error("Error fetching MAL list:", error);
     throw new Error(`Error fetching MAL list: ${(error as Error).message}`);

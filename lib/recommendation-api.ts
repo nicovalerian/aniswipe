@@ -20,7 +20,7 @@ export async function getRecommendations(malUsername: string): Promise<AnimeReco
   return data.recommendations.map((anime: any) => ({
       mal_id: anime.mal_id,
       title: anime.title,
-      image_url: anime.images?.jpg?.image_url || '',
+      image_url: anime.images?.jpg?.large_image_url || '',
       synopsis: anime.synopsis || 'No synopsis available.',
       score: anime.score || 0,
       genres: anime.genres?.map((g: { name: string }) => g.name) || [],

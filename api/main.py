@@ -180,11 +180,10 @@ def generate_recommendations_logic(username):
         on='anime_id'
     )
 
-    # Adjusted rerank_score to prioritize similarity more
     recs_with_features['rerank_score'] = (
-        (recs_with_features['similarity'] ** 1.5) * # Emphasize similarity
-        (recs_with_features['score'] + 1) *
-        np.log1p(recs_with_features['members'] / 1000) # Dampen popularity effect
+        recs_with_features['similarity'] *
+        (recs_with_features['score'] + 1) * # Add 1 to score to avoid multiplying by 0
+        np.log1p(recs_with_features['members']) # Use log1p for members count
     )
 
     recs_with_features = recs_with_features.sort_values(by='rerank_score', ascending=False)

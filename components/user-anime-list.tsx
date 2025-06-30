@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import Image from "next/image";
 import { getUserAnimeList } from "@/app/swipe/actions";
 import { Badge } from "@/components/ui/badge";
+import { useRecommendationStore } from "@/stores/recommendation-store"; // Import the store
 
 interface UserAnimeEntry {
   anime_id: string;
@@ -20,10 +21,11 @@ interface UserAnimeEntry {
 export function UserAnimeList() {
   const [animeList, setAnimeList] = useState<UserAnimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const { userListRefreshTrigger } = useRecommendationStore(); // Get the refresh trigger
 
   useEffect(() => {
     fetchUserList();
-  }, []);
+  }, [userListRefreshTrigger]); // Add userListRefreshTrigger to dependencies
 
   const fetchUserList = async () => {
     setLoading(true);

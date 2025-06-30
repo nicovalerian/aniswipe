@@ -10,11 +10,16 @@ interface SwipeCardProps {
   genres: string[];
 }
 
-export function SwipeCard({ title, image_url, synopsis, score, genres }: SwipeCardProps) {
+export function SwipeCard({ mal_id, title, image_url, synopsis, score, genres }: SwipeCardProps) {
   const shortSynopsis = synopsis.length > 150 ? synopsis.substring(0, 147) + "..." : synopsis;
 
   return (
-    <Card className="relative w-full h-full flex-shrink-0 shadow-lg rounded-xl overflow-hidden text-white" tabIndex={0} autoFocus>
+    <Card
+      className="relative w-full h-full flex-shrink-0 shadow-lg rounded-xl overflow-hidden text-white"
+      tabIndex={0}
+      autoFocus
+      data-mal-id={mal_id} // Add data-mal-id attribute
+    >
       <Image
         src={image_url}
         alt={title}
