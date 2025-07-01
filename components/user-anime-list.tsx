@@ -73,7 +73,7 @@ export function UserAnimeList() {
   };
 
   return (
-    <div className="mt-8 overflow-y-auto h-[calc(100vh-250px)]"> {/* Adjust height as needed */}
+    <div className="mt-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {animeList.filter(entry => entry.Anime).map((entry, index) => (
           <div key={entry.anime_id} className="relative overflow-hidden rounded-lg aspect-[2/3]">

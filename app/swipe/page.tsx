@@ -12,7 +12,7 @@ export default function SwipePage() {
       </div>
 
       {/* Right Column (User Anime List) */}
-      <div className="flex-1 pl-4">
+      <div className="flex-1 pl-4 h-screen overflow-y-auto">
         <h1 className="text-4xl font-bold text-center mb-4">Your Anime List</h1>
         <AnimeSearch />
         <UserAnimeList />

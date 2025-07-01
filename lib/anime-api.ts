@@ -15,11 +15,21 @@ export interface AnimeRecommendation {
 }
 
 // Function to fetch anime details from Jikan API
-export async function fetchAnimeDetails(malId: number): Promise<AnimeRecommendation | null> {
+export async function fetchAnimeDetails(malId: number, retries = 3, delay = 1000): Promise<AnimeRecommendation | null> {
   const JIKAN_API_BASE_URL = "https://api.jikan.moe/v4"; // Jikan API base URL
 
   try {
     const response = await fetch(`${JIKAN_API_BASE_URL}/anime/${malId}`);
+    if (response.status === 429) {
+      if (retries > 0) {
+        console.warn(`Rate limited. Retrying in ${delay}ms... (${retries} retries left)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchAnimeDetails(malId, retries - 1, delay * 2); // Exponential backoff
+      } else {
+        console.error(`Failed to fetch details for MAL ID ${malId} after multiple retries.`);
+        return null;
+      }
+    }
     if (!response.ok) {
       console.error(`Failed to fetch details for MAL ID ${malId}: ${response.statusText}`);
       return null;

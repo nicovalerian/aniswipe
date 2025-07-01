@@ -15,10 +15,9 @@ export default function DynamicBackgroundImage({ src }: DynamicBackgroundImagePr
     <Image
       src={imageUrl}
       alt="Anime Background"
-      layout="fill"
-      objectFit="cover"
+      fill
       quality={75}
-      className="z-0 blur-sm brightness-50"
+      className="z-0 blur-sm brightness-50 object-cover"
       priority
       onError={() => {
         setImageUrl(fallbackImage);

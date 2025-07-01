@@ -7,7 +7,7 @@ interface MalAnimeEntry {
   node: {
     id: number;
     title: string;
-    main_picture: {
+    main_picture?: {
       medium: string;
       large: string;
     };
@@ -128,7 +128,7 @@ export async function confirmImport(animeList: MalAnimeEntry[], malUsername: str
         mal_id: entry.node.id,
         title: entry.node.title,
         image_url:
-          entry.node.main_picture.large || entry.node.main_picture.medium,
+          entry.node.main_picture?.large || entry.node.main_picture?.medium || null,
       }));
 
     // If there are new animes, insert them
