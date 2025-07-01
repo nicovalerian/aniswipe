@@ -42,6 +42,9 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
       const swipedAnimeTitle = anime.title; // Capture the title of the swiped anime
       setLastDirection(direction);
 
+      // The swiper will automatically move to the next slide because the underlying data changes.
+      // We don't need to call swiperRef.current.slideNext() manually.
+
       if (direction === "right") {
         try {
           await addAnimeToList({
@@ -57,19 +60,11 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
           console.error("Failed to add anime to list:", error);
           toast.error(`Failed to add "${swipedAnimeTitle}". Please try again.`);
         }
+        removeTopRecommendation();
       } else if (direction === "up") {
         setSelectedAnime(anime);
-        // The AddAnimeDialog now manages its own open state, so no need to set showAddDialog here
-      } else if (direction === "left") {
-        moveTopRecommendationToBack(); // Move the skipped anime to the back of the deck
-      }
-
-      // Always advance the card and remove the recommendation after a swipe action (or keyboard action)
-      if (swiperRef.current) {
-        swiperRef.current.slideNext();
-      }
-      // For right and up swipes, remove the top recommendation. For left, it's moved to back.
-      if (direction === "right" || direction === "up") {
+        // The AddAnimeDialog now manages its own open state.
+        // The recommendation is removed immediately, consistent with original behavior.
         removeTopRecommendation();
       } else if (direction === "left") {
         moveTopRecommendationToBack(); // Move the skipped anime to the back of the deck
@@ -148,7 +143,7 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
       )}
 
       {lastDirection && (
-        <h2 className="absolute bottom-0 text-xl font-bold">
+        <h2 className="absolute bottom-[-4rem] text-xl font-bold">
           You swiped {lastDirection}
         </h2>
       )}
