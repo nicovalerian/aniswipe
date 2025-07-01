@@ -7,6 +7,7 @@ import React, {
   useRef,
 } from "react";
 import { addAnimeToList } from "@/app/swipe/actions";
+import { useRouter } from "next/navigation";
 import { useRecommendationStore } from "@/stores/recommendation-store";
 import { SwipeCard } from "./swipe-card";
 import { AddAnimeDialog } from "./add-anime-dialog";
@@ -23,12 +24,12 @@ interface RecommendationSwiperProps {
 }
 
 export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps) {
-  const { recommendations, setRecommendations, removeTopRecommendation, moveTopRecommendationToBack } =
+  const router = useRouter();
+  const { recommendations, setRecommendations, removeTopRecommendation, moveTopRecommendationToBack, incrementUserListRefreshTrigger } =
     useRecommendationStore();
   const [lastDirection, setLastDirection] = useState<string>();
   const [selectedAnime, setSelectedAnime] =
     useState<AnimeRecommendation | null>(null);
-  const [userListRefreshKey, setUserListRefreshKey] = useState(0); // New state for refreshing user list
   const swiperRef = useRef<import('swiper/types').Swiper | null>(null); // Ref for Swiper instance
 
   // Initialize recommendations from props
@@ -40,7 +41,6 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
     async (direction: string, anime: AnimeRecommendation) => {
       const swipedAnimeTitle = anime.title; // Capture the title of the swiped anime
       setLastDirection(direction);
-      setSelectedAnime(anime);
 
       if (direction === "right") {
         try {
@@ -52,13 +52,13 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
             score: null,
           });
           toast.success(`Added "${swipedAnimeTitle}" to your planned list!`);
+          incrementUserListRefreshTrigger(); // Trigger list refresh
         } catch (error) {
           console.error("Failed to add anime to list:", error);
           toast.error(`Failed to add "${swipedAnimeTitle}". Please try again.`);
-        } finally {
-          setUserListRefreshKey(prevKey => prevKey + 1); // Increment key to trigger refresh
         }
       } else if (direction === "up") {
+        setSelectedAnime(anime);
         // The AddAnimeDialog now manages its own open state, so no need to set showAddDialog here
       } else if (direction === "left") {
         moveTopRecommendationToBack(); // Move the skipped anime to the back of the deck
@@ -75,7 +75,7 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
         moveTopRecommendationToBack(); // Move the skipped anime to the back of the deck
       }
     },
-    [setSelectedAnime, setLastDirection, removeTopRecommendation, moveTopRecommendationToBack]
+    [setSelectedAnime, setLastDirection, removeTopRecommendation, moveTopRecommendationToBack, incrementUserListRefreshTrigger]
   );
 
   const handleDialogClose = () => {
