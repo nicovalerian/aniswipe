@@ -80,6 +80,9 @@ export function UserAnimeList() {
   };
 
   const formatStatus = (status: string) => {
+    if (status === "plan_to_watch" || status === "planned") {
+      return "Plan to Watch";
+    }
     return status
       .replace(/_/g, " ")
       .replace(/\b\w/g, (char) => char.toUpperCase());
@@ -95,7 +98,7 @@ export function UserAnimeList() {
   const displayList = useMemo(() => {
     if (searchTerm.trim() && searchResults.length > 0) {
       return searchResults.map(anime => ({
-        anime_id: anime.mal_id.toString(),
+        anime_id: `search-${anime.mal_id}`,
         status: 'search_result',
         score: 0,
         Anime: {
@@ -155,30 +158,36 @@ export function UserAnimeList() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end text-white">
               <div className="flex flex-col p-4">
                 <h3 className="text-lg font-bold mb-2 line-clamp-2">{entry.Anime.title}</h3>
-                {entry.status === 'search_result' ? (
-                  <AddAnimeDialog anime={{ mal_id: entry.Anime.mal_id, title: entry.Anime.title, images: { jpg: { image_url: entry.Anime.image_url }}}} onAnimeAdded={fetchUserList} />
-                ) : (
-                  <div className="flex items-center gap-x-2">
-                    <Badge
-                      variant={(() => {
-                        switch (entry.status) {
-                          case "completed": return "completed";
-                          case "plan_to_watch": return "secondary";
-                          case "watching": return "default";
-                          case "dropped": return "destructive";
-                          default: return "default";
-                        }
-                      })()}
-                    >
-                      {formatStatus(entry.status)}
-                    </Badge>
-                    {entry.score > 0 && (
-                      <Badge style={getScoreColor(entry.score)} className="text-white border-transparent">
-                        Score: {entry.score}/10
+                <div className="flex items-center gap-x-2">
+                  {entry.status === 'search_result' ? (
+                    <div className="flex justify-center w-full">
+                      <AddAnimeDialog anime={{ mal_id: entry.Anime.mal_id, title: entry.Anime.title, images: { jpg: { image_url: entry.Anime.image_url }}}} onAnimeAdded={fetchUserList} />
+                    </div>
+                  ) : (
+                    <>
+                      <Badge
+                        variant={(() => {
+                          switch (entry.status) {
+                            case "completed": return "completed";
+                            case "plan_to_watch":
+                            case "planned":
+                              return "plan_to_watch";
+                            case "watching": return "watching";
+                            case "dropped": return "destructive";
+                            default: return "default";
+                          }
+                        })()}
+                      >
+                        {formatStatus(entry.status)}
                       </Badge>
-                    )}
-                  </div>
-                )}
+                      {entry.score > 0 && (
+                        <Badge style={getScoreColor(entry.score)} className="text-white border-transparent">
+                          Score: {entry.score}/10
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

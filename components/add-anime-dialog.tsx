@@ -64,7 +64,7 @@ export function AddAnimeDialog({ anime, onAnimeAdded }: AddAnimeDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button className="w-full">Add to List</Button>
+        <Button className="px-8 bg-slate-700 hover:bg-slate-600">Add to List</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

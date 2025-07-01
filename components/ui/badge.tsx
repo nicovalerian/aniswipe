@@ -14,10 +14,12 @@ const badgeVariants = cva(
         secondary:
           "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
         destructive:
-          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-red-800 dark:text-red-200",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
-        completed: "bg-zinc-200 text-zinc-900 border-transparent",
+        completed: "bg-zinc-200 text-zinc-900 border-transparent dark:bg-zinc-600 dark:text-zinc-200",
+        plan_to_watch: "bg-blue-200 text-blue-900 border-transparent dark:bg-blue-800 dark:text-blue-200",
+        watching: "bg-yellow-200 text-yellow-900 border-transparent dark:bg-yellow-800 dark:text-yellow-200",
       },
     },
     defaultVariants: {

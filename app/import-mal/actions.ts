@@ -92,8 +92,29 @@ export async function confirmImport(animeList: MalAnimeEntry[], malUsername: str
   }
  
   const userId = user.id;
+  const username = user.user_metadata.username; // Get username from metadata
 
   try {
+
+    // Ensure the user exists in the public.User table before proceeding
+    const { data: existingUser } = await supabase
+      .from('User')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (!existingUser) {
+      // If the user doesn't exist, insert them into the public.User table
+      const { error: insertUserError } = await supabase
+        .from('User')
+        .insert({ id: userId, username: username });
+
+      if (insertUserError) {
+        console.error("Error inserting user into public.User:", insertUserError);
+        throw new Error(`Failed to create user profile: ${insertUserError.message}`);
+      }
+    }
+
     // Upsert mal_username into profiles table
     const { error: upsertProfileError } = await supabase
       .from('profiles')

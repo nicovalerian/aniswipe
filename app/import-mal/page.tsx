@@ -164,7 +164,7 @@ export default function ImportMalPage() {
                             case "completed":
                               return "outline";
                             case "plan_to_watch":
-                              return "secondary";
+                              return "plan_to_watch";
                             case "dropped":
                               return "destructive";
                             case "watching":

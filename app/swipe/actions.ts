@@ -15,7 +15,7 @@ interface AddAnimeEntryData extends AnimeData {
 }
 
 export async function searchAnime(query: string) {
-  const res = await fetch(`https://api.jikan.moe/v4/anime?q=${query}&limit=10`);
+  const res = await fetch(`https://api.jikan.moe/v4/anime?q=${query}&limit=21`);
   if (!res.ok) {
     throw new Error("Failed to fetch anime");
   }
