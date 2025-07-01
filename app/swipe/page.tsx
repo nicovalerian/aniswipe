@@ -1,4 +1,3 @@
-import { AnimeSearch } from "@/components/anime-search";
 import { UserAnimeList } from "@/components/user-anime-list";
 import RecommendationDataFetcher from "@/components/recommendation-data-fetcher"; // Import the new Server Component
 
@@ -14,7 +13,6 @@ export default function SwipePage() {
       {/* Right Column (User Anime List) */}
       <div className="flex-1 pl-4 h-screen overflow-y-auto">
         <h1 className="text-4xl font-bold text-center mb-4">Your Anime List</h1>
-        <AnimeSearch />
         <UserAnimeList />
       </div>
     </div>

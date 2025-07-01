@@ -40,7 +40,7 @@ interface AddAnimeDialogProps {
 }
 
 export function AddAnimeDialog({ anime, onAnimeAdded }: AddAnimeDialogProps) {
-  const [status, setStatus] = useState("Planned");
+  const [status, setStatus] = useState("plan_to_watch");
   const [score, setScore] = useState(0); // Initialize with a default score
   const [open, setOpen] = useState(false); // Manage dialog open state internally
 
@@ -78,32 +78,34 @@ export function AddAnimeDialog({ anime, onAnimeAdded }: AddAnimeDialogProps) {
             <Label htmlFor="status" className="text-right">
               Status
             </Label>
-            <Select onValueChange={setStatus} defaultValue="Planned">
+            <Select onValueChange={setStatus} defaultValue="plan_to_watch">
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Planned">Planned</SelectItem>
-                <SelectItem value="Watching">Watching</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-                <SelectItem value="Dropped">Dropped</SelectItem>
+                <SelectItem value="plan_to_watch">Plan to Watch</SelectItem>
+                <SelectItem value="watching">Watching</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="dropped">Dropped</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="score" className="text-right">
-              Score: {score}
-            </Label>
-            <Slider
-              id="score"
-              min={0}
-              max={10}
-              step={1}
-              value={[score]}
-              onValueChange={(val) => setScore(val[0])}
-              className="col-span-3"
-            />
-          </div>
+          {status === "completed" && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="score" className="text-right">
+                Score: {score}
+              </Label>
+              <Slider
+                id="score"
+                min={0}
+                max={10}
+                step={1}
+                value={[score]}
+                onValueChange={(val) => setScore(val[0])}
+                className="col-span-3"
+              />
+            </div>
+          )}
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
