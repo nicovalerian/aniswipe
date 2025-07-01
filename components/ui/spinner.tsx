@@ -20,7 +20,6 @@ const spinnerVariants = cva(
     },
     defaultVariants: {
       size: "default",
-      color: "primary",
       thickness: "default",
     },
   }
@@ -38,7 +37,11 @@ const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
       ref={ref}
       className={cn(
         "rounded-full border-solid border-current border-r-transparent",
-        spinnerVariants({ size, thickness, color: spinnerColor, className })
+        spinnerVariants({ size, thickness, className }),
+        spinnerColor === "primary" && "text-primary",
+        spinnerColor === "secondary" && "text-secondary",
+        spinnerColor === "muted" && "text-muted-foreground",
+        spinnerColor === "foreground" && "text-foreground"
       )}
       role="status"
       {...props}

@@ -153,3 +153,7 @@
     transform: scale(1.05); /* Slight scale effect */
   }
 }
+
+/* Swiper CSS */
+@import 'swiper/css';
+@import 'swiper/css/effect-cards';

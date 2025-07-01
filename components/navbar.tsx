@@ -8,12 +8,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import LogoutButton from "./logout-button";
 import { useSupabase } from "./session-provider";
+import { signOut } from "@/app/auth/actions";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
-  const { session, username } = useSupabase();
+  const { session, username, clearSession } = useSupabase();
   const user = session?.user;
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    clearSession();
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <nav className="flex items-center justify-between p-4 bg-gray-800 text-white">
@@ -43,8 +52,8 @@ export default function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem>
-                <LogoutButton />
+              <DropdownMenuItem onSelect={handleSignOut} className="cursor-pointer">
+                Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

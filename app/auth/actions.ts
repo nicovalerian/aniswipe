@@ -3,6 +3,7 @@
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from 'next/navigation'
+import { revalidatePath } from "next/cache";
 
 export async function signUp(formData: FormData) {
   const cookieStore = await cookies();
@@ -44,22 +45,33 @@ export async function signUp(formData: FormData) {
 
   if (data.user) {
     // Insert user data into public.User table
-    const { error: insertError } = await supabase
+    const { error: insertUserError } = await supabase
       .from("User")
       .insert({ id: data.user.id, username: username });
 
-    if (insertError) {
+    if (insertUserError) {
       // Check for unique constraint violation (PostgreSQL error code 23505)
-      if (insertError.code === "23505") {
+      if (insertUserError.code === "23505") {
         console.error(
           "Username uniqueness violation:",
-          insertError
+          insertUserError
         );
         return { success: false, error: "Email/username already exists." };
       }
-      console.error("Error inserting user into public.User:", insertError);
+      console.error("Error inserting user into public.User:", insertUserError);
       return { success: false, error: "Failed to create user profile." };
     }
+
+    // Also create an entry in the public.profiles table
+    const { error: insertProfileError } = await supabase
+      .from("profiles")
+      .insert({ id: data.user.id }); // mal_username can be null initially
+
+    if (insertProfileError) {
+      console.error("Error inserting user into public.profiles:", insertProfileError);
+      return { success: false, error: "Failed to create user profile entry." };
+    }
+
     return { success: true };
   }
 
@@ -97,7 +109,8 @@ export async function signIn(formData: FormData) {
     console.error("Sign in error:", error);
     return { success: false, error: error.message };
   }
-
+  
+  revalidatePath('/swipe'); // Revalidate the swipe page after successful sign-in
   redirect('/swipe')
 }
 export async function signOut() {

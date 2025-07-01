@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import SessionProvider from "@/components/session-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from "next/headers";
 
@@ -42,8 +43,8 @@ export default async function RootLayout({
   )
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
 
   return (
@@ -57,10 +58,11 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-            <SessionProvider session={session}>
+            <SessionProvider user={user}>
               <Navbar />
               {children}
             </SessionProvider>
+            <Toaster />
         </ThemeProvider>
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { Session } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { Toaster } from "sonner";
 
@@ -16,30 +16,30 @@ const Context = createContext<SupabaseContext | undefined>(undefined);
 
 export default function SessionProvider({
   children,
-  session: initialSession,
+  user: initialUser,
 }: {
   children: React.ReactNode;
-  session: Session | null;
+  user: User | null;
 }) {
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   const router = useRouter();
-  const [session, setSession] = useState<Session | null>(initialSession);
+  const [user, setUser] = useState<User | null>(initialUser);
   const [username, setUsername] = useState<string | null>(null);
 
   const clearSession = () => {
-    setSession(null);
+    setUser(null);
     setUsername(null);
   };
 
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, newSession) => {
-      setSession(newSession);
-      if (event === "SIGNED_IN" && newSession) {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (event === "SIGNED_IN" && session) {
         router.refresh();
       }
       if (event === "SIGNED_OUT") {
@@ -54,22 +54,22 @@ export default function SessionProvider({
   
   useEffect(() => {
     async function getUsername() {
-      if (session?.user) {
+      if (user) {
         const { data } = await supabase
-          .from("User")
-          .select("username")
-          .eq("id", session.user.id)
+          .from("profiles")
+          .select("mal_username")
+          .eq("id", user.id)
           .single();
-        setUsername(data?.username || null);
+        setUsername(data?.mal_username || null);
       } else {
         setUsername(null);
       }
     }
     getUsername();
-  }, [session, supabase]);
+  }, [user, supabase]);
 
   return (
-    <Context.Provider value={{ session, username, clearSession }}>
+    <Context.Provider value={{ session: { user } as Session, username, clearSession }}>
       <Toaster />
       {children}
     </Context.Provider>
