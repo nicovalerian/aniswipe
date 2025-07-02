@@ -63,16 +63,6 @@ export async function fetchMalAnimeList(username: string) {
       nextUrl = data.paging?.next || null; // Get the URL for the next page, if it exists
     }
 
-    // After successfully fetching the MAL list, save the username to the profiles table
-    const { error: upsertError } = await supabase
-      .from('profiles')
-      .upsert({ id: sessionUser.id, mal_username: username }, { onConflict: 'id' });
-
-    if (upsertError) {
-      console.error("Supabase upsert error in fetchMalAnimeList:", upsertError);
-      throw new Error(`Failed to save MAL username: ${upsertError.message}`);
-    }
-
     console.log(`Successfully fetched ${allAnimeEntries.length} anime entries from MyAnimeList.`);
     return allAnimeEntries;
   } catch (error: unknown) {
@@ -96,23 +86,20 @@ export async function confirmImport(animeList: MalAnimeEntry[], malUsername: str
 
   try {
 
-    // Ensure the user exists in the public.User table before proceeding
-    const { data: existingUser } = await supabase
+    // Upsert the user into the public.User table
+    const { error: upsertUserError } = await supabase
       .from('User')
-      .select('id')
-      .eq('id', userId)
-      .single();
+      .upsert({ id: userId, username: username }, { onConflict: 'id' });
 
-    if (!existingUser) {
-      // If the user doesn't exist, insert them into the public.User table
-      const { error: insertUserError } = await supabase
-        .from('User')
-        .insert({ id: userId, username: username });
-
-      if (insertUserError) {
-        console.error("Error inserting user into public.User:", insertUserError);
-        throw new Error(`Failed to create user profile: ${insertUserError.message}`);
-      }
+    if (upsertUserError) {
+        // If the error is a unique constraint violation on username, it means the username exists with a different id.
+        // In a real-world scenario, you might want to handle this by asking the user to log in with the correct account
+        // or to choose a different username. For now, we will throw a more specific error.
+        if (upsertUserError.code === '23505') { // Unique violation
+            throw new Error(`Username "${username}" is already taken. Please choose a different username or log in with the existing account.`);
+        }
+      console.error("Error upserting user into public.User:", upsertUserError);
+      throw new Error(`Failed to create or update user profile: ${upsertUserError.message}`);
     }
 
     // Upsert mal_username into profiles table
