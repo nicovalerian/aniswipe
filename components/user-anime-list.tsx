@@ -20,39 +20,39 @@ interface Anime {
   };
 }
 
-interface UserAnimeEntry {
-  anime_id: string;
-  status: string;
-  score: number;
-  Anime: {
-    mal_id: number;
-    title: string;
-    image_url: string;
-  };
+import { UserAnimeEntry } from "@/lib/types";
+
+interface UserAnimeListProps {
+  userAnimeList: UserAnimeEntry[];
 }
 
-export function UserAnimeList() {
-  const [animeList, setAnimeList] = useState<UserAnimeEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+export function UserAnimeList({ userAnimeList: initialUserAnimeList }: UserAnimeListProps) {
+  const [animeList, setAnimeList] = useState<UserAnimeEntry[]>(initialUserAnimeList);
+  const [loading, setLoading] = useState(false); // No longer loading initially as data comes from props
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Anime[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedAnimeId, setSelectedAnimeId] = useState<number | null>(null);
   const { userListRefreshTrigger } = useRecommendationStore();
 
   useEffect(() => {
-    fetchUserList();
-  }, [userListRefreshTrigger]);
+    // If the prop changes, update the internal state
+    setAnimeList(initialUserAnimeList);
+  }, [initialUserAnimeList]);
 
   useEffect(() => {
+    // This effect can still be used for client-side search clearing if needed
     if (searchTerm.trim() === "") {
       setSearchResults([]);
     }
   }, [searchTerm]);
 
-  const fetchUserList = async () => {
+  // Remove fetchUserList as data is passed via props.
+  // The fetchUserList function now refers to refreshing the list after an action.
+  const refreshUserList = async () => {
     setLoading(true);
     try {
-      const list = await getUserAnimeList();
+      const list = await getUserAnimeList(); // Call server action to get updated list
       setAnimeList(list || []);
     } catch (error) {
       console.error("Error fetching user anime list:", error);
@@ -61,6 +61,12 @@ export function UserAnimeList() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (userListRefreshTrigger) {
+      refreshUserList(); // Trigger refresh if something in store indicates a change
+    }
+  }, [userListRefreshTrigger]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -161,7 +167,12 @@ export function UserAnimeList() {
                 <div className="flex items-center gap-x-2">
                   {entry.status === 'search_result' ? (
                     <div className="flex justify-center w-full">
-                      <AddAnimeDialog anime={{ mal_id: entry.Anime.mal_id, title: entry.Anime.title, images: { jpg: { image_url: entry.Anime.image_url }}}} onAnimeAdded={fetchUserList} />
+                      <Button
+                        onClick={() => setSelectedAnimeId(entry.Anime.mal_id)}
+                        disabled={animeList.some(item => item.Anime.mal_id === entry.Anime.mal_id)}
+                      >
+                        Add to List
+                      </Button>
                     </div>
                   ) : (
                     <>
@@ -180,7 +191,7 @@ export function UserAnimeList() {
                       >
                         {formatStatus(entry.status)}
                       </Badge>
-                      {entry.score > 0 && (
+                      {(entry.score !== null && entry.score > 0) && (
                         <Badge style={getScoreColor(entry.score)} className="text-white border-transparent">
                           Score: {entry.score}/10
                         </Badge>
@@ -193,6 +204,17 @@ export function UserAnimeList() {
           </div>
         ))}
       </div>
+
+      {selectedAnimeId !== null && (
+        <AddAnimeDialog
+          animeId={selectedAnimeId}
+          onAnimeAdded={() => {
+            refreshUserList();
+            setSelectedAnimeId(null); // Close the dialog after adding
+          }}
+          onClose={() => setSelectedAnimeId(null)} // Allow dialog to close itself
+        />
+      )}
     </div>
   );
 }

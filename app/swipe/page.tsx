@@ -1,24 +1,55 @@
-import { UserAnimeList } from "@/components/user-anime-list";
-import RecommendationDataFetcher from "@/components/recommendation-data-fetcher"; // Import the new Server Component
-import Navbar from "@/components/navbar"; // Import the Navbar component
+import Navbar from "@/components/navbar";
+import { getUserAnimeList } from "./actions";
+import { getRecommendations } from "@/lib/recommendation-api";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import SwipeClientWrapper from "@/components/swipe-client-wrapper";
+import { UserAnimeEntry } from "@/lib/types";
 
-export default function SwipePage() {
+export default async function SwipePage() {
+  let userAnimeList: UserAnimeEntry[] = [];
+  try {
+    userAnimeList = await getUserAnimeList();
+  } catch (error) {
+    console.error("Failed to fetch user anime list:", error);
+  }
+
+  let recommendationIds: number[] = [];
+  let recommendationError: string | null = null;
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('mal_username')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      if (profileError.code !== 'PGRST116') {
+        recommendationError = "Failed to load user profile.";
+      }
+    } else if (profile && profile.mal_username) {
+      try {
+        recommendationIds = await getRecommendations(profile.mal_username, userAnimeList);
+      } catch (e) {
+        recommendationError = "Failed to fetch recommendations.";
+      }
+    } else {
+      recommendationError = "MAL Username not found. Please update your profile.";
+    }
+  } else {
+    recommendationError = "User not authenticated. Please log in.";
+  }
+
   return (
     <>
       <Navbar />
-      <div className="flex min-h-screen py-2">
-        {/* Left Column (Recommendations/Swiping) */}
-        <div className="flex-1 border-r border-gray-300 pr-4 flex flex-col items-center justify-center mt-8">
-          <h1 className="text-4xl font-bold text-center mb-4">Anime Recommendations</h1>
-          <RecommendationDataFetcher /> {/* Render the new Server Component here */}
-        </div>
-
-        {/* Right Column (User Anime List) */}
-        <div className="flex-1 pl-4 h-screen overflow-y-auto mt-8">
-          <h1 className="text-4xl font-bold text-center mb-4">Your Anime List</h1>
-          <UserAnimeList />
-        </div>
-      </div>
+      <SwipeClientWrapper
+        userAnimeList={userAnimeList}
+        recommendationIds={recommendationIds}
+        recommendationError={recommendationError}
+      />
     </>
   );
 }

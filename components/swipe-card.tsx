@@ -8,9 +8,13 @@ import { fetchAnimeDetails, AnimeRecommendation } from "@/lib/anime-api";
 
 interface SwipeCardProps {
   animeId: number;
+  userAnimeEntry?: {
+    status: string;
+    score: number | null;
+  };
 }
 
-export function SwipeCard({ animeId }: SwipeCardProps) {
+export function SwipeCard({ animeId, userAnimeEntry }: SwipeCardProps) {
   const [anime, setAnime] = useState<AnimeRecommendation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +72,7 @@ export function SwipeCard({ animeId }: SwipeCardProps) {
       className="relative w-full h-full flex-shrink-0 shadow-lg rounded-xl overflow-hidden text-white"
       tabIndex={0}
       autoFocus
-      data-mal-id={anime.mal_id} // Add data-mal-id attribute
+      data-mal-id={anime.mal_id}
     >
       <Image
         src={anime.image_url}
@@ -83,9 +87,20 @@ export function SwipeCard({ animeId }: SwipeCardProps) {
       <div className="relative z-20 flex flex-col justify-end h-full p-6">
         <div className="space-y-2">
           <CardTitle className="text-3xl font-bold leading-tight line-clamp-2">{anime.title}</CardTitle>
-          <div className="text-md">
-            MAL Score: <span className="font-semibold">{anime.score || "N/A"}</span>
-          </div>
+          {userAnimeEntry ? (
+            <>
+              <div className="text-md">
+                Status: <span className="font-semibold capitalize">{userAnimeEntry.status}</span>
+              </div>
+              <div className="text-md">
+                Your Score: <span className="font-semibold">{userAnimeEntry.score || "N/A"}</span>
+              </div>
+            </>
+          ) : (
+            <div className="text-md">
+              MAL Score: <span className="font-semibold">{anime.score || "N/A"}</span>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2 py-2">
             {anime.genres?.slice(0, 3).map((genre) => (
               <span key={genre} className="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-medium">
@@ -95,17 +110,19 @@ export function SwipeCard({ animeId }: SwipeCardProps) {
           </div>
           <p className="text-sm line-clamp-3">{shortSynopsis}</p>
         </div>
-        <div className="mt-4 text-center text-xs text-white/70 space-y-1">
-          <p>
-            <span className="font-semibold">Swipe Right</span> to Add to Planned
-          </p>
-          <p>
-            <span className="font-semibold">Swipe Left</span> to Skip
-          </p>
-          <p>
-            <span className="font-semibold">Swipe Up</span> for More Options
-          </p>
-        </div>
+        {!userAnimeEntry && (
+          <div className="mt-4 text-center text-xs text-white/70 space-y-1">
+            <p>
+              <span className="font-semibold">Swipe Right</span> to Add to Planned
+            </p>
+            <p>
+              <span className="font-semibold">Swipe Left</span> to Skip
+            </p>
+            <p>
+              <span className="font-semibold">Swipe Up</span> for More Options
+            </p>
+          </div>
+        )}
       </div>
     </Card>
   );

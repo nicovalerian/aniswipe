@@ -23,9 +23,19 @@ import { toast } from "sonner";
 
 interface RecommendationSwiperProps {
   recommendationIds: number[];
+  userAnimeList: {
+    anime_id: number;
+    status: string;
+    score: number | null;
+    Anime: {
+      mal_id: number;
+      title: string;
+      image_url: string;
+    };
+  }[];
 }
 
-export function RecommendationSwiper({ recommendationIds }: RecommendationSwiperProps) {
+export function RecommendationSwiper({ recommendationIds, userAnimeList }: RecommendationSwiperProps) {
   const router = useRouter();
   const setRecommendations = useRecommendationStore((state) => state.setRecommendations);
   const { recommendations, removeTopRecommendation, moveTopRecommendationToBack, incrementUserListRefreshTrigger } =
@@ -35,10 +45,13 @@ export function RecommendationSwiper({ recommendationIds }: RecommendationSwiper
 
   useEffect(() => {
     if (!initialized.current) {
-      setRecommendations(recommendationIds);
+      const filteredRecommendations = recommendationIds.filter(
+        (id) => !userAnimeList.some((entry) => entry.Anime.mal_id === id)
+      );
+      setRecommendations(filteredRecommendations);
       initialized.current = true;
     }
-  }, [recommendationIds, setRecommendations]);
+  }, [recommendationIds, setRecommendations, userAnimeList]);
 
   const [lastDirection, setLastDirection] = useState<string>();
   const [selectedAnime, setSelectedAnime] = useState<number | null>(null);
@@ -158,11 +171,14 @@ export function RecommendationSwiper({ recommendationIds }: RecommendationSwiper
             // If manual dragging needs to trigger state changes, additional logic would be needed here.
           }}
         >
-          {recommendations.map((animeId) => (
-            <SwiperSlide key={animeId}>
-              <SwipeCard animeId={animeId} />
-            </SwiperSlide>
-          ))}
+          {recommendations.map((animeId) => {
+            const userEntry = userAnimeList.find((entry) => entry.Anime.mal_id === animeId);
+            return (
+              <SwiperSlide key={animeId}>
+                <SwipeCard animeId={animeId} userAnimeEntry={userEntry} />
+              </SwiperSlide>
+            );
+          })}
         </Swiper>
       ) : (
         <div className="text-center flex flex-col items-center">

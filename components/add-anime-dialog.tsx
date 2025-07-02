@@ -31,9 +31,10 @@ import { Spinner } from "./ui/spinner";
 interface AddAnimeDialogProps {
   animeId: number | null; // Change to accept animeId
   onAnimeAdded: () => void;
+  onClose: () => void;
 }
 
-export function AddAnimeDialog({ animeId, onAnimeAdded }: AddAnimeDialogProps) {
+export function AddAnimeDialog({ animeId, onAnimeAdded, onClose }: AddAnimeDialogProps) {
   const [status, setStatus] = useState("plan_to_watch");
   const [score, setScore] = useState(0); // Initialize with a default score
   const [open, setOpen] = useState(false); // Manage dialog open state internally
@@ -89,10 +90,13 @@ export function AddAnimeDialog({ animeId, onAnimeAdded }: AddAnimeDialogProps) {
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <Button className="px-8 bg-slate-700 hover:bg-slate-600">Add to List</Button>
-      </AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) {
+        onClose(); // Call onClose when the dialog is closed
+      }
+    }}>
+      {/* Removed AlertDialogTrigger as the dialog is now controlled by selectedAnimeId */}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Add {fetchedAnime?.title || "Anime"} to your list?</AlertDialogTitle>
