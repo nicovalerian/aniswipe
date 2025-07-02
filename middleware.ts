@@ -5,18 +5,23 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createSupabaseMiddlewareClient(req, res);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser() // Ensure session is refreshed and user data is available
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const protectedRoutes = ['/swipe', '/import-mal']; // Add more protected routes here
+  const protectedRoutes = ['/swipe', '/import-mal'];
+  const publicRoutes = ['/login', '/register', '/'];
 
-  // If the current path is one of the protected routes AND there is no user (meaning no active session), redirect to login
-  if (protectedRoutes.includes(req.nextUrl.pathname) && !user) {
-    return NextResponse.redirect(new URL('/login', req.url));
+  // If the user is logged in and trying to access a public-only route, redirect to /swipe
+
+  // If the user is not logged in and trying to access a protected route, redirect to /login
+  if (!user && protectedRoutes.includes(req.nextUrl.pathname)) {
+    const redirectResponse = NextResponse.redirect(new URL('/login', req.url));
+    res.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return redirectResponse;
   }
 
-  return res
+  return res;
 }
 
 export const config = {

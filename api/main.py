@@ -155,7 +155,7 @@ def create_user_profile(user_anime_list, tfidf_matrix, indices, df_processed):
         return None, set()
     return profile_vector, watched_anime_ids
 
-def generate_recommendations_logic(username):
+def generate_recommendations_logic(username, user_anime_list_from_frontend):
     """The main orchestrator function to generate recommendations."""
     logging.info(f"Starting recommendation generation for user: {username}")
     start_time = time.time()
@@ -164,10 +164,11 @@ def generate_recommendations_logic(username):
         logging.error("MAL_CLIENT_ID is not set in environment variables.")
         return "MAL_CLIENT_ID is not set in environment variables.", []
 
-    user_list = get_user_anime_list_official(username, MAL_CLIENT_ID)
+    # Use the user_anime_list passed from the frontend directly
+    user_list = user_anime_list_from_frontend
     if not user_list:
-        logging.warning(f"Could not fetch anime list for '{username}'.")
-        return f"Could not fetch anime list for '{username}'. The user may not exist or has a private list.", []
+        logging.warning(f"No user anime list provided for '{username}'.")
+        return "No user anime list provided.", []
 
     user_profile, watched_ids = create_user_profile(user_list, tfidf_matrix, indices, df_processed)
     if user_profile is None:
@@ -221,15 +222,42 @@ def recommend_anime():
     """API endpoint to get anime recommendations."""
     data = request.get_json()
     username = data.get('username')
+    user_anime_list = data.get('user_anime_list', [])
     if not username:
         return jsonify({"error": "Username is required"}), 400
 
-    message, recommendations = generate_recommendations_logic(username)
-    if recommendations:
-        return jsonify({"message": message, "recommendation_ids": recommendations}), 200
-    else:
-        return jsonify({"message": message, "recommendation_ids": []}), 500
+    # Hardcoded popular anime for fallback
+    # In a real application, this would come from a database or a more sophisticated fallback mechanism.
+    popular_anime_fallback = [
+        21,    # One Piece
+        16498, # Attack on Titan
+        5114,  # Fullmetal Alchemist: Brotherhood
+        11061, # Hunter x Hunter (2011)
+        20,    # Naruto
+        1,     # Cowboy Bebop
+        41467, # Jujutsu Kaisen
+        28977, # Gintama.
+        30276, # One-Punch Man
+        9253   # Steins;Gate
+    ]
+
+    try:
+        message, recommendations = generate_recommendations_logic(username, user_anime_list)
+        if not recommendations:
+            logging.info(f"No recommendations for {username}. Returning popular anime fallback.")
+            return jsonify({
+                "message": message + " Serving popular anime fallback.",
+                "recommendation_ids": popular_anime_fallback
+            }), 200
+        else:
+            return jsonify({"message": message, "recommendation_ids": recommendations}), 200
+    except Exception as e:
+        logging.error(f"An unhandled error occurred during recommendation generation for {username}: {e}", exc_info=True)
+        return jsonify({
+            "error": "An internal server error occurred.",
+            "recommendation_ids": popular_anime_fallback # Always return a fallback
+        }), 500
 
 if __name__ == '__main__':
     load_and_preprocess_data()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False) # Changed debug to False for production-like behavior

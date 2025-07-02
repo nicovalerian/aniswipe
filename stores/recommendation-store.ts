@@ -1,12 +1,8 @@
 import { create } from 'zustand';
-import { fetchAnimeDetails, AnimeRecommendation } from '@/lib/anime-api';
-import { getRecommendations } from '@/lib/recommendation-api'; // Import getRecommendations
-import { getUserAnimeList } from '@/app/swipe/actions'; // Import getUserAnimeList
-
 interface RecommendationStore {
-  recommendations: AnimeRecommendation[];
-  setRecommendations: (malUsername: string | null) => Promise<void>; // Change to accept malUsername
-  getTopRecommendation: () => AnimeRecommendation | undefined;
+  recommendations: number[];
+  setRecommendations: (recommendationIds: number[]) => void;
+  getTopRecommendation: () => number | undefined;
   removeTopRecommendation: () => void;
   moveTopRecommendationToBack: () => void; // New action to move top card to back
   userListRefreshTrigger: number; // New state for refreshing user list
@@ -15,46 +11,11 @@ interface RecommendationStore {
 
 export const useRecommendationStore = create<RecommendationStore>((set) => ({
   recommendations: [],
-  setRecommendations: async (malUsername: string | null) => {
-    if (!malUsername) {
-      set({ recommendations: [] });
-      return;
-    }
-    try {
-      // 1. Fetch recommendation IDs from the backend
-      const recommendationIds = await getRecommendations(malUsername);
-
-      // 2. Fetch full anime details in batches to avoid rate limiting
-      const batchSize = 2; // Process 2 requests at a time
-      const delay = 5000; // 5-second delay between batches
-      let allFetchedAnimes: AnimeRecommendation[] = [];
-
-      for (let i = 0; i < recommendationIds.length; i += batchSize) {
-        const batchIds = recommendationIds.slice(i, i + batchSize);
-        const animeDetailsPromises = batchIds.map(id => fetchAnimeDetails(id));
-        const fetchedBatch = (await Promise.all(animeDetailsPromises)).filter(Boolean) as AnimeRecommendation[];
-        allFetchedAnimes = [...allFetchedAnimes, ...fetchedBatch];
-
-        if (i + batchSize < recommendationIds.length) {
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-
-      // 3. Fetch user's existing anime list to prevent duplicates
-      const userAnimeList = await getUserAnimeList();
-      const userAnimeMalIds = new Set(userAnimeList.map(entry => entry.Anime.mal_id));
-
-      // 4. Filter out recommendations that are already in the user's list
-      const filteredRecommendations = allFetchedAnimes.filter(anime => !userAnimeMalIds.has(anime.mal_id));
-
-      set({ recommendations: filteredRecommendations });
-    } catch (error) {
-      console.error("Error setting recommendations:", error);
-      set({ recommendations: [] });
-    }
+  setRecommendations: (recommendationIds: number[]) => {
+    set({ recommendations: recommendationIds });
   },
   getTopRecommendation: () => {
-    let topAnime: AnimeRecommendation | undefined;
+    let topAnime: number | undefined;
     set((state) => {
       if (state.recommendations.length > 0) {
         topAnime = state.recommendations[0];

@@ -24,36 +24,63 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { addAnimeToList } from "@/app/swipe/actions";
 
-interface Anime {
-  mal_id: number;
-  title: string;
-  images: {
-    jpg: {
-      image_url: string;
-    };
-  };
-}
+import { fetchAnimeDetails, AnimeRecommendation } from "@/lib/anime-api";
+import { toast } from "sonner";
+import { Spinner } from "./ui/spinner";
 
 interface AddAnimeDialogProps {
-  anime: Anime; // Change to accept an anime object
+  animeId: number | null; // Change to accept animeId
   onAnimeAdded: () => void;
 }
 
-export function AddAnimeDialog({ anime, onAnimeAdded }: AddAnimeDialogProps) {
+export function AddAnimeDialog({ animeId, onAnimeAdded }: AddAnimeDialogProps) {
   const [status, setStatus] = useState("plan_to_watch");
   const [score, setScore] = useState(0); // Initialize with a default score
   const [open, setOpen] = useState(false); // Manage dialog open state internally
+  const [fetchedAnime, setFetchedAnime] = useState<AnimeRecommendation | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (animeId) {
+      setOpen(true); // Open dialog when animeId is provided
+      setIsLoading(true);
+      setError(null);
+      fetchAnimeDetails(animeId)
+        .then((data) => {
+          if (data) {
+            setFetchedAnime(data);
+          } else {
+            setError("Failed to load anime details.");
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching anime details:", err);
+          setError("Error loading anime details.");
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setOpen(false); // Close dialog if animeId is null
+      setFetchedAnime(null);
+    }
+  }, [animeId]);
 
   const handleAddToList = async () => {
+    if (!fetchedAnime) {
+      toast.error("Anime details not loaded yet. Please try again.");
+      return;
+    }
     try {
       await addAnimeToList({
-        mal_id: anime.mal_id,
-        title: anime.title,
-        image_url: anime.images.jpg.image_url,
+        mal_id: fetchedAnime.mal_id,
+        title: fetchedAnime.title,
+        image_url: fetchedAnime.image_url,
         status,
         score,
       });
-      console.log("Anime added to list successfully!");
+      toast.success(`Added "${fetchedAnime.title}" to your list!`);
       onAnimeAdded(); // Call the callback
       setOpen(false); // Close the dialog on success
     } catch (error) {
@@ -68,7 +95,7 @@ export function AddAnimeDialog({ anime, onAnimeAdded }: AddAnimeDialogProps) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Add {anime.title} to your list?</AlertDialogTitle>
+          <AlertDialogTitle>Add {fetchedAnime?.title || "Anime"} to your list?</AlertDialogTitle>
           <AlertDialogDescription>
             Set the status and your score for this anime.
           </AlertDialogDescription>

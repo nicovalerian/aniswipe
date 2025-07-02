@@ -1,13 +1,13 @@
 // lib/recommendation-api.ts
 import { AnimeRecommendation } from './anime-api';
 
-export async function getRecommendations(malUsername: string): Promise<number[]> {
+export async function getRecommendations(malUsername: string, userAnimeList: any[]): Promise<number[]> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_RECOMMENDATION_API_URL}/recommend`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username: malUsername }),
+    body: JSON.stringify({ username: malUsername, user_anime_list: userAnimeList }),
   });
 
   if (!response.ok) {

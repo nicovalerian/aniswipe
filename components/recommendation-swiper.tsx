@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { useRecommendationStore } from "@/stores/recommendation-store";
 import { SwipeCard } from "./swipe-card";
 import { AddAnimeDialog } from "./add-anime-dialog";
+import { Button } from "./ui/button";
+import Link from "next/link";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/effect-cards';
@@ -20,26 +22,52 @@ import { toast } from "sonner";
 
 
 interface RecommendationSwiperProps {
-  malUsername: string | null;
+  recommendationIds: number[];
 }
 
-export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps) {
+export function RecommendationSwiper({ recommendationIds }: RecommendationSwiperProps) {
   const router = useRouter();
-  const { recommendations, setRecommendations, removeTopRecommendation, moveTopRecommendationToBack, incrementUserListRefreshTrigger } =
+  const setRecommendations = useRecommendationStore((state) => state.setRecommendations);
+  const { recommendations, removeTopRecommendation, moveTopRecommendationToBack, incrementUserListRefreshTrigger } =
     useRecommendationStore();
+
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (!initialized.current) {
+      setRecommendations(recommendationIds);
+      initialized.current = true;
+    }
+  }, [recommendationIds, setRecommendations]);
+
   const [lastDirection, setLastDirection] = useState<string>();
-  const [selectedAnime, setSelectedAnime] =
-    useState<AnimeRecommendation | null>(null);
+  const [selectedAnime, setSelectedAnime] = useState<number | null>(null);
   const swiperRef = useRef<import('swiper/types').Swiper | null>(null); // Ref for Swiper instance
 
-  // Initialize recommendations from props
-  useEffect(() => {
-    setRecommendations(malUsername);
-  }, [malUsername, setRecommendations]);
 
   const handleSwipe = useCallback(
-    async (direction: string, anime: AnimeRecommendation) => {
-      const swipedAnimeTitle = anime.title; // Capture the title of the swiped anime
+    async (direction: string, animeId: number) => {
+     // SwipeCard will need to expose the full anime object, or we fetch it here.
+     // For now, I'll update the swipecard component.
+     // The `handleSwipe` function will receive `animeId` instead of the full `AnimeRecommendation` object.
+     // I will need to fetch the anime details when a swipe action occurs.
+     // This will involve calling `fetchAnimeDetails(animeId)` inside `handleSwipe`.
+     let anime: AnimeRecommendation | null = null;
+     try {
+       const { fetchAnimeDetails } = await import("@/lib/anime-api");
+       anime = await fetchAnimeDetails(animeId);
+     } catch (e) {
+       console.error("Error fetching anime details on swipe:", e);
+       toast.error("Failed to fetch anime details for swipe action.");
+       return;
+     }
+
+     if (!anime) {
+       toast.error("Anime details not found for swipe action.");
+       removeTopRecommendation(); // Remove the card even if details not found
+       return;
+     }
+     const swipedAnimeTitle = anime.title;
       setLastDirection(direction);
 
       // The swiper will automatically move to the next slide because the underlying data changes.
@@ -57,12 +85,11 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
           toast.success(`Added "${swipedAnimeTitle}" to your planned list!`);
           incrementUserListRefreshTrigger(); // Trigger list refresh
         } catch (error) {
-          console.error("Failed to add anime to list:", error);
           toast.error(`Failed to add "${swipedAnimeTitle}". Please try again.`);
         }
         removeTopRecommendation();
       } else if (direction === "up") {
-        setSelectedAnime(anime);
+        setSelectedAnime(anime.mal_id);
         // The AddAnimeDialog now manages its own open state.
         // The recommendation is removed immediately, consistent with original behavior.
         removeTopRecommendation();
@@ -82,12 +109,11 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
       return;
     }
 
-    const currentAnime = recommendations[swiperRef.current.activeIndex];
+    const currentAnimeId = recommendations[swiperRef.current.activeIndex];
 
-    if (!currentAnime) {
+    if (!currentAnimeId) {
       // This case should ideally not happen if recommendations.length > 0
       // and activeIndex is within bounds, but good for defensive programming.
-      console.error("Could not find current anime data for active slide at index:", swiperRef.current.activeIndex);
       return;
     }
 
@@ -101,8 +127,8 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
       // Swiper doesn't have a direct "up" swipe, so we'll just trigger the dialog
     }
 
-    if (direction && currentAnime) {
-      handleSwipe(direction, currentAnime);
+    if (direction && currentAnimeId) {
+      handleSwipe(direction, currentAnimeId);
     }
   }, [recommendations, handleSwipe, swiperRef]);
 
@@ -132,14 +158,22 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
             // If manual dragging needs to trigger state changes, additional logic would be needed here.
           }}
         >
-          {recommendations.map((anime) => (
-            <SwiperSlide key={anime.mal_id}>
-              <SwipeCard {...anime} />
+          {recommendations.map((animeId) => (
+            <SwiperSlide key={animeId}>
+              <SwipeCard animeId={animeId} />
             </SwiperSlide>
           ))}
         </Swiper>
       ) : (
-        <p>No more recommendations for now. Check back later!</p>
+        <div className="text-center flex flex-col items-center">
+          {/*
+            The malUsername check has been moved to RecommendationDataFetcher
+            or should be handled by checking the existence of recommendations in the store
+            after initialization.
+            For now, we will simply display the "No more recommendations" message.
+          */}
+          <div className="text-lg text-white">No more recommendations for now. Check back later!</div>
+        </div>
       )}
 
       {lastDirection && (
@@ -150,7 +184,7 @@ export function RecommendationSwiper({ malUsername }: RecommendationSwiperProps)
 
       {selectedAnime && (
         <AddAnimeDialog
-          anime={selectedAnime}
+          animeId={selectedAnime}
           onAnimeAdded={handleDialogClose}
         />
       )}

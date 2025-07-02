@@ -59,7 +59,6 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
             <SessionProvider user={user}>
-              <Navbar />
               {children}
             </SessionProvider>
             <Toaster />

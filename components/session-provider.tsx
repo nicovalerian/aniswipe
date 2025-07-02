@@ -39,10 +39,9 @@ export default function SessionProvider({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      if (event === "SIGNED_IN" && session) {
+      if (session) {
         router.refresh();
-      }
-      if (event === "SIGNED_OUT") {
+      } else {
         router.push("/login");
       }
     });

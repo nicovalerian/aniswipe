@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 import animeImage from "../kokou no hito.jpg";
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,41 +12,64 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Eye, EyeOff, Play, ArrowLeft } from "lucide-react"
-import { signIn } from "../auth/actions"
+import { createClient } from "@supabase/supabase-js"
+import { Eye, EyeOff, Play, ArrowLeft, User } from "lucide-react"
 
-const formSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-})
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
-export default function LoginPage() {
+const formSchema = z
+  .object({
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    email: z.string().email("Please enter a valid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  })
+
+export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const router = useRouter()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      username: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true)
 
-    const formData = new FormData()
-    formData.append("email", values.email)
-    formData.append("password", values.password)
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          data: {
+            username: values.username,
+          },
+        },
+      })
 
-    const result = await signIn(formData)
-
-    if (result && result.error) {
-      form.setError("root", { message: result.error })
+      if (error) {
+        form.setError("root", { message: error.message })
+      } else {
+        // Show success message or redirect
+        router.push("/login?message=Check your email to confirm your account")
+      }
+    } catch (error) {
+      form.setError("root", { message: "An unexpected error occurred" })
+    } finally {
+      setIsLoading(false)
     }
-    
-    setIsLoading(false)
   }
 
   return (
@@ -82,12 +105,32 @@ export default function LoginPage() {
               AniSwipe
             </span>
           </div>
-          <CardTitle className="text-2xl font-bold text-white">Welcome Back</CardTitle>
-          <CardDescription className="text-gray-300">Sign in to continue your anime journey</CardDescription>
+          <CardTitle className="text-2xl font-bold text-white">Join AniSwipe</CardTitle>
+          <CardDescription className="text-gray-300">Create your account and start discovering anime</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">Username</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          placeholder="Choose a username"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400 pl-10"
+                          {...field}
+                        />
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="email"
@@ -115,7 +158,7 @@ export default function LoginPage() {
                     <FormControl>
                       <div className="relative">
                         <Input
-                          placeholder="Enter your password"
+                          placeholder="Create a password"
                           type={showPassword ? "text" : "password"}
                           className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400 pr-10"
                           {...field}
@@ -135,6 +178,35 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">Confirm Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          placeholder="Confirm your password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400 pr-10"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-400 hover:text-white"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {form.formState.errors.root && (
                 <div className="text-red-400 text-sm text-center">{form.formState.errors.root.message}</div>
@@ -145,16 +217,16 @@ export default function LoginPage() {
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
                 disabled={isLoading}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
           </Form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-300">
-              {"Don't have an account? "}
-              <Link href="/register" className="text-purple-400 hover:text-purple-300 font-medium">
-                Sign up
+              Already have an account?{" "}
+              <Link href="/login" className="text-purple-400 hover:text-purple-300 font-medium">
+                Sign in
               </Link>
             </p>
           </div>
