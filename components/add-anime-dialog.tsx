@@ -10,9 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger, // Re-add this import
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button"; // Re-add this import
 import {
   Select,
   SelectContent,
@@ -22,11 +20,11 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Spinner } from "@/components/ui/spinner";
 import { addAnimeToList } from "@/app/swipe/actions";
 
 import { fetchAnimeDetails, AnimeRecommendation } from "@/lib/anime-api";
 import { toast } from "sonner";
-import { Spinner } from "./ui/spinner";
 
 interface AddAnimeDialogProps {
   animeId: number | null; // Change to accept animeId
@@ -39,7 +37,7 @@ export function AddAnimeDialog({ animeId, onAnimeAdded, onClose }: AddAnimeDialo
   const [score, setScore] = useState(0); // Initialize with a default score
   const [open, setOpen] = useState(false); // Manage dialog open state internally
   const [fetchedAnime, setFetchedAnime] = useState<AnimeRecommendation | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   React.useEffect(() => {
@@ -98,52 +96,69 @@ export function AddAnimeDialog({ animeId, onAnimeAdded, onClose }: AddAnimeDialo
     }}>
       {/* Removed AlertDialogTrigger as the dialog is now controlled by selectedAnimeId */}
       <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Add {fetchedAnime?.title || "Anime"} to your list?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Set the status and your score for this anime.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="status" className="text-right">
-              Status
-            </Label>
-            <Select onValueChange={setStatus} defaultValue="plan_to_watch">
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="plan_to_watch">Plan to Watch</SelectItem>
-                <SelectItem value="watching">Watching</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="dropped">Dropped</SelectItem>
-              </SelectContent>
-            </Select>
+        {isLoading && (
+          <div className="flex justify-center items-center h-48">
+            <Spinner size="lg" />
           </div>
-          {status === "completed" && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="score" className="text-right">
-                Score: {score}
-              </Label>
-              <Slider
-                id="score"
-                min={0}
-                max={10}
-                step={1}
-                value={[score]}
-                onValueChange={(val) => setScore(val[0])}
-                className="col-span-3"
-              />
+        )}
+        {error && (
+          <div className="text-red-500 text-center py-4">
+            <p>{error}</p>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={onClose}>Close</AlertDialogCancel>
+            </AlertDialogFooter>
+          </div>
+        )}
+        {!isLoading && !error && fetchedAnime && (
+          <>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Add {fetchedAnime.title} to your list?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Set the status and your score for this anime.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="status" className="text-right">
+                  Status
+                </Label>
+                <Select onValueChange={setStatus} defaultValue="plan_to_watch">
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select a status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="plan_to_watch">Plan to Watch</SelectItem>
+                    <SelectItem value="watching">Watching</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="dropped">Dropped</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {status === "completed" && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="score" className="text-right">
+                    Score: {score}
+                  </Label>
+                  <Slider
+                    id="score"
+                    min={0}
+                    max={10}
+                    step={1}
+                    value={[score]}
+                    onValueChange={(val) => setScore(val[0])}
+                    className="col-span-3"
+                  />
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleAddToList}>
-            Add to List
-          </AlertDialogAction>
-        </AlertDialogFooter>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleAddToList}>
+                Add to List
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </>
+        )}
       </AlertDialogContent>
     </AlertDialog>
   );

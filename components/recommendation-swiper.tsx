@@ -7,12 +7,9 @@ import React, {
   useRef,
 } from "react";
 import { addAnimeToList } from "@/app/swipe/actions";
-import { useRouter } from "next/navigation";
 import { useRecommendationStore } from "@/stores/recommendation-store";
 import { SwipeCard } from "./swipe-card";
 import { AddAnimeDialog } from "./add-anime-dialog";
-import { Button } from "./ui/button";
-import Link from "next/link";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/effect-cards';
@@ -36,7 +33,6 @@ interface RecommendationSwiperProps {
 }
 
 export function RecommendationSwiper({ recommendationIds, userAnimeList }: RecommendationSwiperProps) {
-  const router = useRouter();
   const setRecommendations = useRecommendationStore((state) => state.setRecommendations);
   const { recommendations, removeTopRecommendation, moveTopRecommendationToBack, incrementUserListRefreshTrigger } =
     useRecommendationStore();
@@ -97,7 +93,8 @@ export function RecommendationSwiper({ recommendationIds, userAnimeList }: Recom
           });
           toast.success(`Added "${swipedAnimeTitle}" to your planned list!`);
           incrementUserListRefreshTrigger(); // Trigger list refresh
-        } catch (error) {
+        } catch (err: unknown) {
+          console.error("Error updating recommendation index:", err);
           toast.error(`Failed to add "${swipedAnimeTitle}". Please try again.`);
         }
         removeTopRecommendation();
@@ -161,7 +158,7 @@ export function RecommendationSwiper({ recommendationIds, userAnimeList }: Recom
           modules={[EffectCards]}
           className="mySwiper w-[350px] h-[500px]"
           onSwiper={(swiper) => (swiperRef.current = swiper)}
-          onSlideChange={(swiper) => {
+          onSlideChange={() => {
             // The actual data manipulation (removeTopRecommendation or moveTopRecommendationToBack)
             // is handled within handleSwipe, which is called by handleKeyDown or direct swipe.
             // This onSlideChange is primarily for reacting to Swiper's internal state changes,
@@ -202,6 +199,7 @@ export function RecommendationSwiper({ recommendationIds, userAnimeList }: Recom
         <AddAnimeDialog
           animeId={selectedAnime}
           onAnimeAdded={handleDialogClose}
+          onClose={handleDialogClose}
         />
       )}
     </div>

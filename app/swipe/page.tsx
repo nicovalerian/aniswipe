@@ -31,9 +31,13 @@ export default async function SwipePage() {
       }
     } else if (profile && profile.mal_username) {
       try {
-        recommendationIds = await getRecommendations(profile.mal_username, userAnimeList);
-      } catch (e) {
-        recommendationError = "Failed to fetch recommendations.";
+        const formattedUserAnimeList = userAnimeList.map(item => ({
+          mal_id: item.Anime.mal_id,
+          score: item.score,
+        }));
+        recommendationIds = await getRecommendations(profile.mal_username, formattedUserAnimeList);
+      } catch (error) {
+        recommendationError = `Failed to fetch recommendations: ${(error as Error).message}`;
       }
     } else {
       recommendationError = "MAL Username not found. Please update your profile.";

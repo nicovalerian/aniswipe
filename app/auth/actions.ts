@@ -1,6 +1,6 @@
 "use server";
 
-import { type CookieOptions, createServerClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from 'next/navigation'
 import { revalidatePath } from "next/cache";

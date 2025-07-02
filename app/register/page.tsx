@@ -49,7 +49,7 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
@@ -65,8 +65,9 @@ export default function RegisterPage() {
         // Show success message or redirect
         router.push("/login?message=Check your email to confirm your account")
       }
-    } catch (error) {
-      form.setError("root", { message: "An unexpected error occurred" })
+    } catch (err: unknown) {
+      const errorMessage = (err instanceof Error) ? err.message : "An unexpected error occurred";
+      form.setError("root", { message: errorMessage });
     } finally {
       setIsLoading(false)
     }

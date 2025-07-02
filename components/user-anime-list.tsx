@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { getUserAnimeList, searchAnime } from "@/app/swipe/actions";
 import { Badge } from "@/components/ui/badge";
@@ -139,7 +138,7 @@ export function UserAnimeList({ userAnimeList: initialUserAnimeList }: UserAnime
 
       {displayList.length === 0 && searchTerm.trim() && !isSearching && (
         <div className="text-center p-8">
-          <p className="text-lg font-semibold">No results found for "{searchTerm}"</p>
+          <p className="text-lg font-semibold">No results found for &quot;{searchTerm}&quot;</p>
         </div>
       )}
 

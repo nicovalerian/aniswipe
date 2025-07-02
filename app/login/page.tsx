@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import animeImage from "../kokou no hito.jpg";
@@ -23,7 +22,6 @@ const formSchema = z.object({
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const router = useRouter()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

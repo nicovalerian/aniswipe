@@ -200,7 +200,7 @@ export async function confirmImport(animeList: MalAnimeEntry[], malUsername: str
     if (userAnimeEntriesToInsert.length > 0) {
       const { error: insertUserEntriesError } = await supabase
         .from("UserAnimeEntry")
-        .insert(userAnimeEntriesToInsert as any);
+        .insert(userAnimeEntriesToInsert);
 
       if (insertUserEntriesError) {
         throw new Error(`Error inserting user anime entries: ${insertUserEntriesError.message}`);
