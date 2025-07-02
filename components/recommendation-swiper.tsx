@@ -119,7 +119,10 @@ export function RecommendationSwiper({ recommendationIds, userAnimeList }: Recom
       return;
     }
 
-    const currentAnimeId = recommendations[swiperRef.current.activeIndex];
+    const swiper = swiperRef.current;
+    if (!swiper) return;
+
+    const currentAnimeId = recommendations[swiper.activeIndex];
 
     if (!currentAnimeId) {
       // This case should ideally not happen if recommendations.length > 0
@@ -127,18 +130,14 @@ export function RecommendationSwiper({ recommendationIds, userAnimeList }: Recom
       return;
     }
 
-    let direction = "";
-    if (event.key === "ArrowRight") { // User wants to "like" (visual swipe right)
-      direction = "right";
-    } else if (event.key === "ArrowLeft") { // User wants to "skip" (visual swipe left)
-      direction = "left";
+    if (event.key === "ArrowRight") {
+      swiper.slideNext();
+      handleSwipe("right", currentAnimeId);
+    } else if (event.key === "ArrowLeft") {
+      swiper.slideNext();
+      handleSwipe("left", currentAnimeId);
     } else if (event.key === "ArrowUp") {
-      direction = "up";
-      // Swiper doesn't have a direct "up" swipe, so we'll just trigger the dialog
-    }
-
-    if (direction && currentAnimeId) {
-      handleSwipe(direction, currentAnimeId);
+      handleSwipe("up", currentAnimeId);
     }
   }, [recommendations, handleSwipe, swiperRef]);
 

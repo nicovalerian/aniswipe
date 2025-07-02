@@ -16,18 +16,23 @@ from functools import lru_cache
 # --- Logging Configuration ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - [%(funcName)s] - %(message)s')
 
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app, origins="http://localhost:3000", supports_credentials=True)
+# Global variables for the model
+df_processed = None
+tfidf_matrix = None
+indices = None
 
 # --- Configuration Constants ---
 MAL_CLIENT_ID = os.environ.get('NEXT_PUBLIC_MAL_CLIENT_ID')
 MAL_API_BASE_URL = os.environ.get('NEXT_PUBLIC_MAL_API_BASE_URL')
 
-# Global variables for the model
-df_processed = None
-tfidf_matrix = None
-indices = None
+def create_app():
+    """Create and configure the Flask application."""
+    app = Flask(__name__)
+    CORS(app, origins="http://localhost:3000", supports_credentials=True)
+
+    # Load data and initialize the model when the application starts.
+    load_and_preprocess_data()
+    return app
 # --- Caching ---
 # Using functools.lru_cache for efficient, in-memory caching of API responses.
 # This will store up to 500 recent anime detail lookups.
@@ -72,6 +77,24 @@ def load_and_preprocess_data():
     df_processed = df_anime.drop(columns=columns_to_drop)
     logging.info(f"Dropped columns: {', '.join(columns_to_drop)}")
 
+    # --- Data Cleaning ---
+    # Convert 'score' and 'members' to numeric, coercing errors to NaN.
+    df_processed['score'] = pd.to_numeric(df_processed['score'], errors='coerce')
+    df_processed['members'] = pd.to_numeric(df_processed['members'], errors='coerce')
+
+    # Log how many rows have invalid scores before dropping them.
+    invalid_scores_count = df_processed['score'].isnull().sum()
+    if invalid_scores_count > 0:
+        logging.warning(f"Found and will remove {invalid_scores_count} rows with invalid/NULL scores from the knowledge base.")
+    
+    # Drop rows where 'score' is NaN and reset the index.
+    df_processed.dropna(subset=['score'], inplace=True)
+    df_processed.reset_index(drop=True, inplace=True)
+    
+    # Now, fill any remaining NaNs in 'members' with 0.
+    df_processed['members'].fillna(0, inplace=True)
+    logging.info(f"Knowledge base cleaned. Final size: {len(df_processed)} entries.")
+
     # --- Feature Engineering ---
     desired_cols = ['genres', 'synopsis', 'producers', 'studios', 'type', 'source', 'english_name']
     found_cols = []
@@ -92,6 +115,10 @@ def load_and_preprocess_data():
     indices = pd.Series(df_processed.index, index=df_processed['anime_id']).drop_duplicates()
     duration = time.time() - start_time
     logging.info(f"✅ Knowledge Base successfully built in {duration:.2f} seconds.")
+    if df_processed is not None:
+        logging.info(f"df_processed successfully loaded. Shape: {df_processed.shape}")
+    else:
+        logging.error("CRITICAL: df_processed is None at the end of preprocessing!")
 
 def get_user_anime_list_official(username, client_id):
     """Fetches the full anime list for a given MAL user from the official v2 API."""
@@ -141,12 +168,34 @@ def create_user_profile(user_anime_list, tfidf_matrix, indices, df_processed):
     total_weight = 0
     for item in valid_user_anime:
         mal_id = item['mal_id']
-        user_score = item['score']
+        user_score = item.get('score')
+
+        # --- Definitive Safeguard ---
+        # 1. Check the user's score for the anime.
+        if user_score is None or pd.isna(user_score):
+            logging.warning(f"DEFENSE: Skipping anime {mal_id} from user list due to NULL score.")
+            continue
+        try:
+            numeric_user_score = float(user_score)
+            if numeric_user_score <= 0:
+                logging.warning(f"DEFENSE: Skipping anime {mal_id} from user list due to zero/negative score: {numeric_user_score}")
+                continue
+        except (ValueError, TypeError):
+            logging.warning(f"DEFENSE: Skipping anime {mal_id} from user list due to invalid score type: {type(user_score).__name__}")
+            continue
+
+        # 2. Check the data from our knowledge base.
         idx = indices[mal_id]
         members_count = df_processed.loc[idx, 'members']
-        weight = user_score * np.log1p(members_count)
-        if user_score <= 5:
-            weight *= -0.5
+        if members_count is None or pd.isna(members_count):
+            logging.error(f"DEFENSE: Skipping anime {mal_id} due to NULL/NaN 'members' count in our knowledge base. This should not happen after cleaning.")
+            continue
+
+        # --- Calculations (now safe) ---
+        weight = numeric_user_score * np.log1p(members_count)
+        if numeric_user_score <= 5:
+            weight *= -0.5  # Penalize disliked anime
+
         profile_vector += tfidf_matrix[idx].toarray().flatten() * weight
         total_weight += abs(weight)
     if total_weight > 0:
@@ -157,6 +206,11 @@ def create_user_profile(user_anime_list, tfidf_matrix, indices, df_processed):
 
 def generate_recommendations_logic(username, user_anime_list_from_frontend):
     """The main orchestrator function to generate recommendations."""
+    # --- Initialization Check ---
+    if df_processed is None or tfidf_matrix is None or indices is None:
+        logging.critical("Model data is not loaded. Initialization may have failed.")
+        return "Server error: Model not initialized.", []
+
     logging.info(f"Starting recommendation generation for user: {username}")
     start_time = time.time()
 
@@ -217,6 +271,8 @@ def generate_recommendations_logic(username, user_anime_list_from_frontend):
     logging.info(f"Successfully generated {len(top_n_recommendation_ids)} recommendation IDs in {total_duration:.2f} seconds.")
     return "Recommendation IDs generated successfully.", top_n_recommendation_ids
 
+app = create_app()
+
 @app.route('/recommend', methods=['POST'])
 def recommend_anime():
     """API endpoint to get anime recommendations."""
@@ -259,5 +315,6 @@ def recommend_anime():
         }), 500
 
 if __name__ == '__main__':
-    load_and_preprocess_data()
-    app.run(host='0.0.0.0', port=5000, debug=False) # Changed debug to False for production-like behavior
+    # When run directly, the app is created and run.
+    # For production, a WSGI server will import 'app' from this file.
+    app.run(host='0.0.0.0', port=5000, debug=False)

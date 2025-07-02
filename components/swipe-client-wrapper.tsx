@@ -16,7 +16,7 @@ export default function SwipeClientWrapper({
   recommendationError,
 }: SwipeClientWrapperProps) {
   return (
-    <div className="flex min-h-screen py-2">
+    <div className="flex flex-col md:flex-row min-h-screen py-2 w-full">
       {/* Left Column (Recommendations/Swiping) */}
       <div className="flex-1 border-r border-gray-300 pr-4 flex flex-col items-center justify-center mt-8">
         <h1 className="text-4xl font-bold text-center mb-4">
