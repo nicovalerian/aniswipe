@@ -79,7 +79,12 @@ export function AddAnimeDialog({ animeId, onAnimeAdded, onClose }: AddAnimeDialo
         status,
         score,
       });
-      toast.success(`Added "${fetchedAnime.title}" to your list!`);
+      toast.success(`Added "${fetchedAnime.title}" to your list!`, {
+        style: {
+          backgroundColor: 'green',
+          color: 'white',
+        },
+      });
       onAnimeAdded(); // Call the callback
       setOpen(false); // Close the dialog on success
     } catch (error) {
@@ -97,17 +102,27 @@ export function AddAnimeDialog({ animeId, onAnimeAdded, onClose }: AddAnimeDialo
       {/* Removed AlertDialogTrigger as the dialog is now controlled by selectedAnimeId */}
       <AlertDialogContent>
         {isLoading && (
-          <div className="flex justify-center items-center h-48">
-            <Spinner size="lg" />
-          </div>
+          <>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Loading Anime...</AlertDialogTitle>
+            </AlertDialogHeader>
+            <div className="flex justify-center items-center h-48">
+              <Spinner size="lg" />
+            </div>
+          </>
         )}
         {error && (
-          <div className="text-red-500 text-center py-4">
-            <p>{error}</p>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={onClose}>Close</AlertDialogCancel>
-            </AlertDialogFooter>
-          </div>
+          <>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Error</AlertDialogTitle>
+            </AlertDialogHeader>
+            <div className="text-red-500 text-center py-4">
+              <p>{error}</p>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={onClose}>Close</AlertDialogCancel>
+              </AlertDialogFooter>
+            </div>
+          </>
         )}
         {!isLoading && !error && fetchedAnime && (
           <>

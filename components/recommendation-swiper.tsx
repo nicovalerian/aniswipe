@@ -114,6 +114,11 @@ export function RecommendationSwiper({ recommendationIds, userAnimeList }: Recom
     setSelectedAnime(null); // Clear selected anime when dialog is closed
   };
 
+  const handleAnimeAdded = () => {
+    incrementUserListRefreshTrigger(); // Trigger list refresh
+    handleDialogClose();
+  };
+
   const handleKeyDown = useCallback(async (event: KeyboardEvent) => {
     if (!swiperRef.current || recommendations.length === 0) {
       return;
@@ -197,7 +202,7 @@ export function RecommendationSwiper({ recommendationIds, userAnimeList }: Recom
       {selectedAnime && (
         <AddAnimeDialog
           animeId={selectedAnime}
-          onAnimeAdded={handleDialogClose}
+          onAnimeAdded={handleAnimeAdded}
           onClose={handleDialogClose}
         />
       )}
