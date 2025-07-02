@@ -10,6 +10,7 @@
 !.yarn/releases
 !.yarn/versions
 *.roo
+api/venv
 
 # testing
 /coverage
